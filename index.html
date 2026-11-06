@@ -1,0 +1,2430 @@
+<!DOCTYPE html>
+<html lang="en" id="htmlRoot" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SSI TEAM - UK Trade Marks Registry Automation Terminal v25.0 [SECURED]</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🇬🇧</text></svg>">
+    
+    <!-- Suppress Tailwind CDN Warning -->
+    <script>
+        const originalWarn = console.warn;
+        console.warn = function(...args) {
+            if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com should not be used in production')) return;
+            originalWarn.apply(console, args);
+        };
+    </script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: {} }
+        };
+    </script>
+    
+    <!-- Lucide Icons Library -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- html2canvas and jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Firebase SDK Compat Suite -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tinos:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700;800;900&family=Caveat:wght@600;700&display=swap');
+
+        * { box-sizing: border-box; }
+        
+        #brightnessOverlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: black;
+            pointer-events: none;
+            z-index: 99998;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        #eyecareOverlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(251, 191, 36, 0.14);
+            mix-blend-mode: multiply;
+            pointer-events: none;
+            z-index: 99997;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        body.eyecare #eyecareOverlay {
+            opacity: 1;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px 10px;
+            font-family: "Inter", sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background: radial-gradient(circle at top, #1e293b 0%, #090d16 100%);
+            color: #f8fafc;
+            transition: background 0.3s ease, color 0.3s ease;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        body.light { background: radial-gradient(circle at top, #f8fafc 0%, #cbd5e1 100%) !important; color: #1e293b !important; }
+        body.eyecare { background: #1c1813 !important; color: #fef08a !important; }
+
+        .pro-panel {
+            background: rgba(15, 23, 42, 0.82);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+        body.light .pro-panel {
+            background: rgba(255, 255, 255, 0.9) !important;
+            border: 1px solid rgba(202, 138, 4, 0.35) !important;
+            box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.08) !important;
+            color: #0f172a !important;
+        }
+
+        .gold-badge { background: rgba(234, 179, 8, 0.18); border: 1px solid rgba(234, 179, 8, 0.45); color: #facc15; }
+        body.light .gold-badge { background: rgba(202, 138, 4, 0.12); border: 1px solid rgba(202, 138, 4, 0.35); color: #b45309; }
+
+        .input-dark { background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(51, 65, 85, 0.9); color: #ffffff; transition: all 0.25s ease; }
+        .input-dark:focus { border-color: #eab308; box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.25); }
+        body.light .input-dark { background: #f8fafc !important; border: 1px solid #cbd5e1 !important; color: #0f172a !important; }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #030712; font-weight: 800; border-radius: 12px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 18px rgba(245, 158, 11, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .btn-gold:hover:not(:disabled) { background: linear-gradient(135deg, #fbbf24 0%, #b45309 100%); transform: translateY(-2px); box-shadow: 0 6px 22px rgba(245, 158, 11, 0.6); }
+        .btn-gold:disabled, .btn-sub:disabled { opacity: 0.55; cursor: not-allowed; }
+
+        .btn-sub {
+            background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(51, 65, 85, 0.9); color: #e2e8f0; border-radius: 12px; font-weight: 600;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+        }
+        body.light .btn-sub { background: #ffffff !important; border: 1px solid #cbd5e1 !important; color: #334155 !important; }
+        .btn-sub:hover:not(:disabled) { background: rgba(51, 65, 85, 0.9); border-color: #eab308; color: #facc15; transform: translateY(-1px); }
+
+        .btn-action-emerald { background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff; border-radius: 10px; font-weight: 700; }
+        .btn-action-rose { background: linear-gradient(135deg, #e11d48 0%, #be123c 100%); color: #ffffff; border-radius: 10px; font-weight: 700; }
+        .btn-action-sky { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #ffffff; border-radius: 10px; font-weight: 700; }
+        .btn-action-purple { background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: #ffffff; border-radius: 10px; font-weight: 700; }
+
+        /* =========================================================
+           1:1 A4 UK TRADE MARKS CERTIFICATE STYLES
+           ========================================================= */
+        .certificate-viewport-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            display: block;
+            padding: 12px 0 24px 0;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .certificate-container {
+            width: 210mm;
+            min-width: 210mm;
+            background-color: #ffffff !important;
+            color: #0d0d0d !important;
+            font-family: 'Times New Roman', 'Tinos', Times, Georgia, serif !important;
+            padding: 10px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.55);
+            box-sizing: border-box;
+            margin: 0 auto;
+        }
+
+        .certificate-container.export-reset {
+            transform: none !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            filter: none !important;
+        }
+
+        .outer-border {
+            border: 2px solid #28285c;
+            padding: 3px;
+            box-sizing: border-box;
+            background-color: #ffffff;
+        }
+
+        .inner-border {
+            border: 1px solid #28285c;
+            padding: 20px 28px 16px 28px;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            background-color: #ffffff;
+        }
+
+        .header-title-left {
+            font-size: 22px;
+            font-weight: bold;
+            line-height: 1.05;
+            letter-spacing: 0.3px;
+            color: #111111;
+            text-align: left;
+            font-family: 'Times New Roman', 'Tinos', Times, Georgia, serif;
+        }
+
+        .header-title-right {
+            font-size: 22px;
+            font-weight: bold;
+            line-height: 1.05;
+            letter-spacing: 0.3px;
+            color: #111111;
+            text-align: right;
+            font-family: 'Times New Roman', 'Tinos', Times, Georgia, serif;
+        }
+
+        .class-heading {
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 4px;
+            margin-bottom: 1px;
+            color: #000000;
+            font-family: 'Times New Roman', 'Tinos', Times, Georgia, serif;
+        }
+
+        .class-body {
+            font-size: 11.5px;
+            line-height: 1.2;
+            color: #111111;
+            text-align: justify;
+            margin-bottom: 2px;
+            font-family: 'Times New Roman', 'Tinos', Times, Georgia, serif;
+        }
+
+        .handwritten-signature {
+            font-family: 'Caveat', cursive !important;
+            font-size: 28px;
+            color: #1a1a1a;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transform: rotate(-1deg);
+            display: inline-block;
+        }
+
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+
+        @media print {
+            html, body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                filter: none !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .certificate-viewport-wrapper {
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+            .certificate-container {
+                box-shadow: none !important;
+                width: 210mm !important;
+                padding: 8px !important;
+                margin: 0 auto !important;
+            }
+        }
+    </style>
+</head>
+<body class="dark">
+
+    <div id="brightnessOverlay" class="no-print"></div>
+    <div id="eyecareOverlay" class="no-print"></div>
+
+    <!-- SUBSCRIPTION PRICING MANAGER MODAL -->
+    <div id="subRatesModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4 no-print">
+        <div class="w-full max-w-lg pro-panel rounded-3xl p-6 space-y-5 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-yellow-500/20 pb-3">
+                <h3 class="text-sm font-black text-yellow-400 uppercase flex items-center gap-2">
+                    <i data-lucide="tag" class="w-4 h-4"></i> Dynamic Subscription Pricing Manager
+                </h3>
+                <button onclick="closeSubModal()" class="p-1.5 rounded-lg btn-sub"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div id="subPricingContainer" class="space-y-3 text-xs">
+                <div class="p-3 bg-slate-900/80 rounded-xl border border-yellow-500/30 flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold text-yellow-400">7 Days Access</h4>
+                        <p class="text-[10px] text-slate-400">Quick project cycle</p>
+                    </div>
+                    <input type="text" id="price_7d" value="£49" class="w-24 input-dark text-center font-bold py-1 px-2 rounded-lg text-xs">
+                </div>
+                <div class="p-3 bg-slate-900/80 rounded-xl border border-yellow-500/30 flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold text-yellow-400">15 Days Access</h4>
+                        <p class="text-[10px] text-slate-400">Extended filing tier</p>
+                    </div>
+                    <input type="text" id="price_15d" value="£89" class="w-24 input-dark text-center font-bold py-1 px-2 rounded-lg text-xs">
+                </div>
+                <div class="p-3 bg-slate-900/80 rounded-xl border border-yellow-500/30 flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold text-yellow-400">20 Days Access</h4>
+                        <p class="text-[10px] text-slate-400">Standard business sprint</p>
+                    </div>
+                    <input type="text" id="price_20d" value="£115" class="w-24 input-dark text-center font-bold py-1 px-2 rounded-lg text-xs">
+                </div>
+                <div class="p-3 bg-slate-900/80 rounded-xl border border-yellow-500/30 flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold text-yellow-400">1 Month PRO</h4>
+                        <p class="text-[10px] text-slate-400">Full automation vault</p>
+                    </div>
+                    <input type="text" id="price_1m" value="£149" class="w-24 input-dark text-center font-bold py-1 px-2 rounded-lg text-xs">
+                </div>
+                <div class="p-3 bg-slate-900/80 rounded-xl border border-yellow-500/30 flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold text-yellow-400">1 Year Enterprise</h4>
+                        <p class="text-[10px] text-slate-400">Annual priority pipeline</p>
+                    </div>
+                    <input type="text" id="price_1y" value="£1,299" class="w-24 input-dark text-center font-bold py-1 px-2 rounded-lg text-xs">
+                </div>
+                <div class="p-3 bg-slate-900/80 rounded-xl border border-yellow-500/30 flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold text-yellow-400">Lifetime Access</h4>
+                        <p class="text-[10px] text-slate-400">Permanent master license</p>
+                    </div>
+                    <input type="text" id="price_life" value="£3,499" class="w-24 input-dark text-center font-bold py-1 px-2 rounded-lg text-xs">
+                </div>
+            </div>
+            <button onclick="saveDynamicPrices()" class="w-full py-3 btn-gold text-xs">SAVE & BROADCAST RATES</button>
+        </div>
+    </div>
+
+    <!-- CONTACT ADMIN MODAL -->
+    <div id="contactModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4 no-print">
+        <div class="w-full max-w-md pro-panel rounded-3xl p-6 space-y-4 text-center shadow-2xl">
+            <div class="flex items-center justify-between border-b border-yellow-500/20 pb-3">
+                <h3 class="text-sm font-black text-yellow-400 uppercase">SSI TEAM Admin Dispatch</h3>
+                <button onclick="closeContactModal()" class="p-1.5 rounded-lg btn-sub"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div class="space-y-3 pt-2">
+                <a id="waLinkBtn" href="https://wa.me/447000000000" target="_blank" rel="noopener noreferrer" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow">💬 Connect via WhatsApp</a>
+                <a id="tgLinkBtn" href="https://t.me/ssiteam_admin" target="_blank" rel="noopener noreferrer" class="w-full py-3.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow">✈️ Connect via Telegram</a>
+            </div>
+            <button onclick="closeContactModal()" class="w-full py-2.5 btn-sub text-xs mt-2">CLOSE</button>
+        </div>
+    </div>
+
+    <!-- DEVICE MANAGEMENT MODAL (REAL TELEMETRY) -->
+    <div id="deviceModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4 no-print">
+        <div class="w-full max-w-xl pro-panel rounded-3xl p-6 space-y-5 shadow-2xl border-sky-500/40">
+            <div class="flex items-center justify-between border-b border-sky-500/20 pb-3">
+                <h3 class="text-sm font-black text-sky-400 uppercase flex items-center gap-2">
+                    <i data-lucide="smartphone" class="w-4 h-4 text-sky-400"></i> Active Device Sessions & Hardware Fingerprint
+                </h3>
+                <button onclick="closeDeviceModal()" class="p-1.5 rounded-lg btn-sub"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div id="deviceListContainer" class="space-y-2.5 max-h-60 overflow-y-auto pr-1"></div>
+            <div class="flex items-center justify-between pt-3 border-t border-slate-700/50">
+                <button onclick="resetAllUserDevices()" class="px-4 py-2.5 btn-action-rose text-xs font-bold">Terminate All Sessions</button>
+                <button onclick="closeDeviceModal()" class="px-5 py-2.5 btn-sub text-xs">CLOSE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FORENSIC IP & MAP MODAL (REAL LIVE NETWORK TRACE) -->
+    <div id="forensicModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4 no-print">
+        <div class="w-full max-w-xl pro-panel rounded-3xl p-6 space-y-5 shadow-2xl border-yellow-500/40">
+            <div class="flex items-center justify-between border-b border-yellow-500/20 pb-3">
+                <h3 class="text-sm font-black text-yellow-400 uppercase flex items-center gap-2">
+                    <i data-lucide="globe" class="w-4 h-4 text-yellow-400"></i> Live Forensic IP Trace & Network Telemetry
+                </h3>
+                <button onclick="closeForensicModal()" class="p-1.5 rounded-lg btn-sub"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div class="p-4 bg-slate-950 rounded-2xl border border-yellow-500/20 space-y-3 font-mono text-xs">
+                <div class="flex justify-between text-slate-300">
+                    <span>Connected Operator IP:</span>
+                    <span id="forensicIpVal" class="text-emerald-400 font-bold">Fetching live IP...</span>
+                </div>
+                <div class="flex justify-between text-slate-300">
+                    <span>ISP / Autonomous System:</span>
+                    <span id="forensicIspVal" class="text-yellow-400">Resolving ASN...</span>
+                </div>
+                <div class="flex justify-between text-slate-300">
+                    <span>Platform & Hardware Hash:</span>
+                    <span id="forensicFpVal" class="text-sky-400">Computing SHA-256...</span>
+                </div>
+                <div class="flex justify-between text-slate-300">
+                    <span>Time Zone & Locale:</span>
+                    <span id="forensicTzVal" class="text-purple-400">Detecting...</span>
+                </div>
+                <div class="h-28 bg-slate-900/90 rounded-xl border border-slate-800 flex flex-col items-center justify-center text-slate-400 text-[11px] relative overflow-hidden p-3">
+                    <div class="absolute inset-0 bg-[radial-gradient(#eab308_1px,transparent_1px)] [background-size:12px_12px] opacity-20"></div>
+                    <span class="relative z-10 flex items-center gap-2 text-yellow-400 font-bold">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                        <span id="forensicGeoCoords">LIVE TELEMETRY STREAMING</span>
+                    </span>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="fetchLiveNetworkTelemetry()" class="flex-1 py-3 btn-sub text-xs text-yellow-400 font-bold">REFRESH TRACE</button>
+                <button onclick="closeForensicModal()" class="flex-1 py-3 btn-gold text-xs">CLOSE MONITOR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FEATURE SUGGESTION MODAL -->
+    <div id="suggestionModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4 no-print">
+        <div class="w-full max-w-lg pro-panel rounded-3xl p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-yellow-500/20 pb-3">
+                <h3 class="text-sm font-black text-yellow-400 uppercase flex items-center gap-2">
+                    <i data-lucide="message-square" class="w-4 h-4"></i> Feature Suggestion Box
+                </h3>
+                <button onclick="closeSuggestionModal()" class="p-1.5 rounded-lg btn-sub"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <p class="text-xs text-slate-300">Submit your automation module request directly to the database and local storage log.</p>
+            <textarea id="suggestionText" rows="4" class="w-full input-dark rounded-xl p-3 text-xs outline-none" placeholder="Describe feature request or workflow improvement..."></textarea>
+            <button onclick="submitSuggestion()" class="w-full py-3 btn-gold text-xs">SUBMIT SUGGESTION</button>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="appInterface" class="w-full max-w-[1150px] space-y-6">
+
+        <!-- TOP BAR -->
+        <header class="w-full pro-panel rounded-2xl px-4 sm:px-6 py-4 flex items-center justify-between gap-4 no-print">
+            <div class="flex items-center gap-3 sm:gap-4">
+                <button onclick="toggleSidebar()" class="p-2.5 btn-sub rounded-xl text-yellow-400 shadow" title="Open Navigation">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <div>
+                    <h1 class="text-sm sm:text-lg font-black tracking-tight flex items-center gap-2">
+                        <span>UK TRADE MARKS AUTOMATION TOOL</span>
+                        <span class="text-[9px] sm:text-[10px] gold-badge px-2 sm:px-2.5 py-0.5 rounded-full font-black" id="roleBadgeDisplay">PRO PANEL</span>
+                    </h1>
+                    <p class="text-[10px] sm:text-[11px] opacity-75 font-medium" id="sessionUserDisplay">Operator Authorized • Enterprise v25.0 [SEAL RESTORED]</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button onclick="runAdminIntelligentDetector()" class="flex items-center gap-1.5 px-3 py-1.5 btn-sub text-xs text-emerald-400 font-bold border-emerald-500/40">
+                    <i data-lucide="terminal" class="w-3.5 h-3.5"></i> স্ক্যানার রান করুন
+                </button>
+                <button onclick="openContactModal()" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 btn-sub text-xs text-yellow-400 font-bold">
+                    <i data-lucide="headphones" class="w-3.5 h-3.5"></i> Admin Dispatch
+                </button>
+                <div id="systemSecurityBadge" class="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-emerald-400 text-xs font-bold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span id="systemSecurityBadgeText">LIVE SECURE</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- SLIDE-OUT SIDEBAR MENU -->
+        <div id="sidebarOverlay" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden transition-opacity opacity-0 no-print" onclick="toggleSidebar()"></div>
+        <div id="slideSidebar" class="fixed top-0 left-0 bottom-0 w-80 pro-panel border-r z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col shadow-2xl no-print">
+            <div class="p-5 border-b border-slate-700/50 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="p-2 gold-badge rounded-xl text-yellow-400"><i data-lucide="command" class="w-5 h-5"></i></div>
+                    <div>
+                        <h2 class="text-sm font-black text-yellow-400">SSI AUTOMATION HUB</h2>
+                        <p class="text-[10px] opacity-75 font-medium">International Control Center</p>
+                    </div>
+                </div>
+                <button onclick="toggleSidebar()" class="p-1.5 rounded-lg btn-sub"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-4 space-y-2.5">
+                <button onclick="switchTab('generator')" class="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold btn-sub text-yellow-400 border-yellow-500/50">
+                    <i data-lucide="award" class="w-4 h-4 text-yellow-400"></i> UK Certificate Engine
+                </button>
+                <button onclick="switchTab('dashboard')" class="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold btn-sub">
+                    <i data-lucide="users" class="w-4 h-4 text-yellow-400"></i> Users Vault & Access (IAM)
+                </button>
+                <button onclick="switchTab('userNotepad')" class="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold btn-sub">
+                    <i data-lucide="book-open" class="w-4 h-4 text-yellow-400"></i> User Instruction & Feature Wiki
+                </button>
+
+                <div class="pt-3 border-t border-slate-800 space-y-2">
+                    <button onclick="openSubRatesModal()" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold btn-sub">
+                        <i data-lucide="tag" class="w-4 h-4 text-amber-400"></i> Subscription Pricing Manager
+                    </button>
+                    <button onclick="openForensicModal()" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold btn-sub">
+                        <i data-lucide="globe" class="w-4 h-4 text-sky-400"></i> Forensic IP & Visitor Radar
+                    </button>
+                    <button onclick="toggleLockdown()" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold btn-sub text-rose-400">
+                        <i data-lucide="shield-alert" class="w-4 h-4 text-rose-400"></i> System Security Lockdown
+                    </button>
+                    <button onclick="openSuggestionModal()" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold btn-sub">
+                        <i data-lucide="message-square" class="w-4 h-4 text-purple-400"></i> Feature Suggestion Box
+                    </button>
+                </div>
+
+                <div class="pt-3 border-t border-slate-800 space-y-3">
+                    <div class="flex items-center justify-between px-2">
+                        <span class="text-[11px] font-bold text-slate-400 uppercase">Theme Toggle</span>
+                        <button onclick="toggleTheme()" class="px-3 py-1 btn-sub text-[11px] font-bold text-yellow-400">Dark / Light</button>
+                    </div>
+                    <div class="flex items-center justify-between px-2">
+                        <span class="text-[11px] font-bold text-slate-400 uppercase">Eye Protection Filter</span>
+                        <button onclick="setEyecareMode()" class="px-3 py-1 btn-sub text-[11px] font-bold text-amber-400">Warm Filter</button>
+                    </div>
+                    <div class="px-2 space-y-1">
+                        <div class="flex justify-between text-[10px] text-slate-400">
+                            <span>Screen Dimmer Overlay</span>
+                            <span id="dimVal">0%</span>
+                        </div>
+                        <input type="range" min="0" max="75" value="0" class="w-full accent-yellow-400" oninput="adjustBrightness(this.value)">
+                    </div>
+                    <div class="pt-2 border-t border-slate-800">
+                        <button onclick="triggerAppLogout()" class="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold btn-action-rose text-white shadow">
+                            <i data-lucide="log-out" class="w-4 h-4"></i> Logout Session
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 1: USERS VAULT & IAM -->
+        <div id="tabDashboard" class="admin-tab space-y-6 hidden no-print">
+            <div class="flex items-center justify-between mb-2">
+                <button onclick="goBackToMain()" class="px-4 py-2 btn-sub text-xs flex items-center gap-2 font-bold text-yellow-400">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Certificate Engine
+                </button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="pro-panel rounded-2xl p-5 flex flex-col justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-yellow-400">Registry Total Users</span>
+                    <div class="text-3xl font-black text-yellow-400 mt-2" id="statTotalUsers">0</div>
+                </div>
+                <div class="pro-panel rounded-2xl p-5 flex flex-col justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-yellow-400">Active Vault Sessions</span>
+                    <div class="text-3xl font-black text-yellow-400 mt-2" id="statActiveSessions">0</div>
+                </div>
+            </div>
+            
+            <!-- IDENTITY & ACCESS MANAGEMENT -->
+            <div class="pro-panel rounded-2xl p-6 shadow-xl space-y-5">
+                <div class="flex items-center justify-between border-b border-yellow-500/20 pb-3">
+                    <h2 class="text-sm font-black uppercase tracking-wider text-yellow-400 flex items-center gap-2">
+                        <i data-lucide="user-plus" class="w-4 h-4 text-yellow-400"></i> Identity & Access Management (SHA-256 Encrypted)
+                    </h2>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-yellow-400 uppercase mb-1">Email (Registry Auth)</label>
+                        <input type="email" id="enrollEmail" placeholder="operator@ukipo.gov.uk" class="w-full input-dark rounded-xl px-3.5 py-2.5 text-xs outline-none font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-yellow-400 uppercase mb-1">Initial Password (Hashed on Save)</label>
+                        <input type="password" id="enrollPass" placeholder="••••••••" class="w-full input-dark rounded-xl px-3.5 py-2.5 text-xs outline-none font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-yellow-400 uppercase mb-1">Daily Query Limit</label>
+                        <input type="number" id="enrollLimit" value="50000" class="w-full input-dark rounded-xl px-3.5 py-2.5 text-xs outline-none font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-yellow-400 uppercase mb-1">Max Devices</label>
+                        <input type="number" id="enrollDevice" value="1" class="w-full input-dark rounded-xl px-3.5 py-2.5 text-xs outline-none font-medium">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-[11px] font-bold text-yellow-400 uppercase mb-1">Subscription Model / Plan</label>
+                        <select id="enrollPlan" class="w-full input-dark rounded-xl px-3.5 py-2.5 text-xs outline-none font-medium">
+                            <option value="7 Days">7 Days Access (£49)</option>
+                            <option value="15 Days">15 Days Access (£89)</option>
+                            <option value="20 Days">20 Days Access (£115)</option>
+                            <option value="1 Month">1 Month PRO (£149/mo)</option>
+                            <option value="1 Year">1 Year Enterprise (£1,299/yr)</option>
+                            <option value="Lifetime">Lifetime Master (£3,499)</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="enrollNewUser()" class="w-full py-3.5 btn-gold text-xs uppercase tracking-widest shadow-lg">ENROLL NEW USER TO VAULT</button>
+            </div>
+
+            <!-- ADMIN SECURITY LOGS -->
+            <div class="pro-panel rounded-2xl p-6 shadow-xl space-y-4 border-rose-500/30">
+                <div class="flex items-center justify-between border-b border-rose-500/20 pb-3">
+                    <h3 class="text-sm font-black uppercase text-rose-400 tracking-wider flex items-center gap-2">
+                        <i data-lucide="shield-alert" class="w-4 h-4"></i> Admin Security Log & Blocked IPs
+                    </h3>
+                    <button onclick="clearSecurityLogs()" class="px-3 py-1 btn-sub text-[10px] text-rose-400 font-bold">Clear Logs</button>
+                </div>
+                <div class="overflow-x-auto rounded-xl border border-rose-500/20 bg-slate-950/80">
+                    <table class="w-full text-left text-xs border-collapse min-w-[750px]">
+                        <thead>
+                            <tr class="bg-rose-500/10 border-b border-rose-500/20 text-rose-400 uppercase text-[10px] tracking-wider">
+                                <th class="py-2.5 px-3">Timestamp</th>
+                                <th class="py-2.5 px-3">Event / Email</th>
+                                <th class="py-2.5 px-3">Auth Hash</th>
+                                <th class="py-2.5 px-3">Source IP</th>
+                                <th class="py-2.5 px-3 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="securityLogTableBody">
+                            <tr><td colspan="5" class="py-4 text-center text-slate-500">No security anomalies recorded.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- REGISTERED SUBSCRIBERS -->
+            <div class="pro-panel rounded-2xl p-6 shadow-xl space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-black uppercase text-yellow-400 tracking-wider">Registered Subscribers & Advanced Action Center</h3>
+                    <span class="text-[10px] font-mono text-slate-400" id="dbConnectionStatus">Checking Vault...</span>
+                </div>
+                <div class="overflow-x-auto rounded-xl border border-yellow-500/20">
+                    <table class="w-full text-left text-xs border-collapse min-w-[1050px]">
+                        <thead>
+                            <tr class="bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-400 uppercase text-[10px] tracking-wider">
+                                <th class="py-3 px-4">Subscriber</th>
+                                <th class="py-3 px-3 text-center">Devices (Manage)</th>
+                                <th class="py-3 px-3">Quota (Used)</th>
+                                <th class="py-3 px-3">Plan</th>
+                                <th class="py-3 px-4">Unban Key & Toggle</th>
+                                <th class="py-3 px-4">License Status</th>
+                                <th class="py-3 px-4 text-right">System Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                            <tr><td colspan="7" class="py-6 text-center opacity-75">Loading subscribers...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: TRADEMARK CERTIFICATE GENERATOR WORKSPACE -->
+        <div id="tabGenerator" class="admin-tab space-y-5">
+            
+            <!-- ADVANCED REAL-TIME TERMINAL, DOM BINDING & ASSET DIAGNOSTIC ENGINE -->
+            <div id="adminDiagnosticContainer" class="pro-panel rounded-2xl p-5 border-emerald-500/50 bg-slate-950/90 shadow-2xl space-y-4 no-print">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-emerald-500/30 pb-3">
+                    <div>
+                        <h3 class="text-xs sm:text-sm font-black uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+                            <i data-lucide="cpu" class="w-4 h-4"></i> ১০০% অ্যাকুরেট লোকাল সার্ভার ও রিয়েল-টাইম ফিচার ডায়াগনস্টিক ইঞ্জিন
+                        </h3>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Node.js VM কম্পাইলার, ইভেন্ট হ্যান্ডলার, DOM বাইন্ডিং, আসল সিল অ্যাসেট এবং লাইন-বাই-লাইন কোড অডিট</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <input type="text" id="terminalBridgeUrlInput" value="http://localhost:9090" placeholder="http://localhost:9090" class="input-dark text-[11px] font-mono px-2.5 py-1.5 rounded-lg w-44">
+                        <button onclick="runAdminIntelligentDetector()" class="px-3 py-1.5 btn-action-emerald text-[11px] font-bold flex items-center gap-1">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> ডিপ স্ক্যান করুন
+                        </button>
+                        <button onclick="repairAndSyncAllBindings()" class="px-3 py-1.5 btn-action-sky text-[11px] font-bold flex items-center gap-1" title="Force Sync Certificate & Reload Seal">
+                            <i data-lucide="wrench" class="w-3.5 h-3.5"></i> অটো-সিঙ্ক ও রিপেয়ার
+                        </button>
+                        <button onclick="exportDiagnosticReportJSON()" class="px-3 py-1.5 btn-sub text-[11px] font-bold text-yellow-400 flex items-center gap-1">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i> JSON রিপোর্ট
+                        </button>
+                    </div>
+                </div>
+
+                <!-- LIVE TELEMETRY METRIC CARDS -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 text-xs font-mono">
+                    <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800">
+                        <span class="text-[10px] text-slate-400 block">DOM & হ্যান্ডলার অডিট</span>
+                        <span id="diagMetricDom" class="font-bold text-emerald-400">Checking...</span>
+                    </div>
+                    <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800">
+                        <span class="text-[10px] text-slate-400 block">সার্টিফিকেট বাইন্ডিং</span>
+                        <span id="diagMetricBinding" class="font-bold text-emerald-400">Checking...</span>
+                    </div>
+                    <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800">
+                        <span class="text-[10px] text-slate-400 block">সিল (Seal) স্ট্যাটাস</span>
+                        <span id="diagMetricSeal" class="font-bold text-yellow-400">Checking...</span>
+                    </div>
+                    <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800">
+                        <span class="text-[10px] text-slate-400 block">এক্সপোর্ট ইঞ্জিন</span>
+                        <span id="diagMetricLibs" class="font-bold text-emerald-400">Checking...</span>
+                    </div>
+                    <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800">
+                        <span class="text-[10px] text-slate-400 block">টার্মিনাল ব্রিজ (9090)</span>
+                        <span id="diagMetricBridge" class="font-bold text-amber-400">Checking...</span>
+                    </div>
+                    <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800">
+                        <span class="text-[10px] text-slate-400 block">স্টোরেজ ব্যবহার</span>
+                        <span id="diagMetricStorage" class="font-bold text-sky-400">0 KB</span>
+                    </div>
+                </div>
+
+                <div id="diagnosticResultsContent" class="text-xs font-mono space-y-2 text-slate-300 max-h-80 overflow-y-auto pr-1">
+                    <p class="text-yellow-400">⏳ সোর্স কোড, সার্টিফিকেট সিল ও লোকাল নেটওয়ার্ক টার্মিনাল স্ক্যান প্রস্তুত হচ্ছে...</p>
+                </div>
+            </div>
+
+            <!-- CONTROL PANEL INPUTS -->
+            <div class="pro-panel rounded-2xl p-6 shadow-2xl no-print">
+                <div class="mb-5 bg-slate-950/70 border border-yellow-500/30 rounded-2xl p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-black text-yellow-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <i data-lucide="cpu" class="w-4 h-4"></i> UK IPO Automated Presets (With Nice Classifications)
+                        </span>
+                        <button onclick="resetCertificateFields()" class="text-xs text-rose-400 hover:text-rose-300 font-bold flex items-center gap-1">
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reset All
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                        <button onclick="applyPreset('tech')" class="px-3 py-2 btn-sub text-xs font-bold text-center">🛡️ Solar / Default</button>
+                        <button onclick="applyPreset('biotech')" class="px-3 py-2 btn-sub text-xs font-bold text-center">🧬 Biotech</button>
+                        <button onclick="applyPreset('fashion')" class="px-3 py-2 btn-sub text-xs font-bold text-center">💎 Luxury</button>
+                        <button onclick="applyPreset('fintech')" class="px-3 py-2 btn-sub text-xs font-bold text-center">🏦 Fintech</button>
+                        <button onclick="applyPreset('fnb')" class="px-3 py-2 btn-sub text-xs font-bold text-center">☕ F&B Brands</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Trade Mark Number -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-yellow-400">Trade Mark Number</label>
+                            <button type="button" onclick="randomizeTmNumber()" class="text-[11px] text-yellow-400 font-bold bg-yellow-500/10 px-2.5 py-1 rounded-lg border border-yellow-500/40 hover:bg-yellow-500/20">
+                                🎲 Randomize
+                            </button>
+                        </div>
+                        <input type="text" id="inputTmNumber" value="2270061" placeholder="e.g. 2270061" class="w-full input-dark rounded-xl px-4 py-2.5 text-sm outline-none font-bold text-yellow-400">
+                    </div>
+
+                    <!-- Dedicated Trade Mark Brand Name -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-yellow-400">Trade Mark Brand Title</label>
+                            <button type="button" onclick="randomizeBrandName()" class="text-[11px] text-yellow-400 font-bold bg-yellow-500/10 px-2.5 py-1 rounded-lg border border-yellow-500/40 hover:bg-yellow-500/20">
+                                🎲 Randomize
+                            </button>
+                        </div>
+                        <input type="text" id="inputBrandName" value="SOLAR NAVIGATOR" placeholder="e.g. SOLAR NAVIGATOR" class="w-full input-dark rounded-xl px-4 py-2.5 text-sm outline-none font-bold text-emerald-400">
+                    </div>
+
+                    <!-- Proprietor Name -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-yellow-400">Name of Proprietor(s)</label>
+                            <button type="button" onclick="randomizeProprietor()" class="text-[11px] text-yellow-400 font-bold bg-yellow-500/10 px-2.5 py-1 rounded-lg border border-yellow-500/40 hover:bg-yellow-500/20">
+                                🎲 Randomize
+                            </button>
+                        </div>
+                        <input type="text" id="inputProprietor" value="Nelson James Kruschandl" placeholder="e.g. Nelson James Kruschandl" class="w-full input-dark rounded-xl px-4 py-2.5 text-sm outline-none font-semibold">
+                    </div>
+
+                    <!-- Effective Date -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-yellow-400">Effective Date (As of)</label>
+                            <button type="button" onclick="randomizeRegDate()" class="text-[11px] text-yellow-400 font-bold bg-yellow-500/10 px-2.5 py-1 rounded-lg border border-yellow-500/40 hover:bg-yellow-500/20">
+                                🎲 Randomize (Chronological)
+                            </button>
+                        </div>
+                        <input type="text" id="inputRegDate" value="15 May 2001" placeholder="e.g. 15 May 2001" class="w-full input-dark rounded-xl px-4 py-2.5 text-sm outline-none font-semibold">
+                    </div>
+
+                    <!-- Entry Date -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-yellow-400">Entry Date (Sealed)</label>
+                            <button type="button" onclick="randomizeEntryDate()" class="text-[11px] text-yellow-400 font-bold bg-yellow-500/10 px-2.5 py-1 rounded-lg border border-yellow-500/40 hover:bg-yellow-500/20">
+                                🎲 Sync +5 Months
+                            </button>
+                        </div>
+                        <input type="text" id="inputEntryDate" value="19 October 2001" placeholder="e.g. 19 October 2001" class="w-full input-dark rounded-xl px-4 py-2.5 text-sm outline-none font-semibold">
+                    </div>
+
+                    <!-- Certificate Signature -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-yellow-400">Certificate Signature & Registrar</label>
+                            <button type="button" onclick="randomizeSignature()" class="text-[11px] text-yellow-400 font-bold bg-yellow-500/10 px-2.5 py-1 rounded-lg border border-yellow-500/40 hover:bg-yellow-500/20">
+                                🎲 Random Officer
+                            </button>
+                        </div>
+                        <input type="text" id="inputSignature" value="Alison Brimelow" placeholder="e.g. Alison Brimelow" class="w-full input-dark rounded-xl px-4 py-2.5 text-sm outline-none font-semibold text-yellow-300">
+                    </div>
+
+                    <!-- Dynamic Nice Classifications Editor -->
+                    <div class="sm:col-span-2">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-yellow-400">Registered Nice Classifications (Format: Class X: Description)</label>
+                            <button type="button" onclick="restoreDefaultClasses()" class="text-[11px] text-sky-400 font-bold bg-sky-500/10 px-2.5 py-1 rounded-lg border border-sky-500/40 hover:bg-sky-500/20">
+                                Restore Default Classes
+                            </button>
+                        </div>
+                        <textarea id="inputClassesSpec" rows="5" class="w-full input-dark rounded-xl p-3 text-xs outline-none font-mono leading-relaxed"></textarea>
+                    </div>
+
+                    <!-- Dynamic Brand Logo & Original Seal Controller -->
+                    <div class="sm:col-span-2">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-yellow-400">Upload Brand Logo / Manage Central Patent Office Seal</label>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <select id="uploadTargetSelect" class="input-dark text-[11px] font-bold px-2.5 py-1 rounded-lg text-yellow-400 border border-yellow-500/40">
+                                    <option value="topSeal">Apply to: Top Patent Office Seal</option>
+                                    <option value="brandMark">Apply to: Middle Brand Mark Graphic</option>
+                                </select>
+                                <button type="button" onclick="reloadOriginalSeal()" class="text-[11px] text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/40 hover:bg-emerald-500/20 flex items-center gap-1">
+                                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Reload Original Seal
+                                </button>
+                                <button type="button" onclick="removeMarkLogo()" class="text-[11px] text-rose-400 font-bold bg-rose-500/10 px-2.5 py-1 rounded-lg border border-rose-500/40 hover:bg-rose-500/20 flex items-center gap-1">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Reset to Default Seal
+                                </button>
+                            </div>
+                        </div>
+                        <input type="file" id="uploadMarkLogo" accept=".jpeg, .jpg, .png, .bmp, image/jpeg, image/png, image/bmp" class="w-full input-dark rounded-xl px-3 py-2 text-sm outline-none font-semibold cursor-pointer border border-emerald-500/50 bg-emerald-500/5" onchange="previewMarkLogo(event)">
+                        <p id="logoUploadStatusMsg" class="text-[10px] text-slate-400 mt-1.5">Default Seal Active (<b>https://exporya.b-cdn.net/wp-content/uploads/2024/02/exporya-trademark.jpg</b>). Max Upload Size: <b>2 MB</b>.</p>
+                        
+                        <div id="logoSizeControl" class="mt-3 p-4 bg-slate-900/60 rounded-xl border border-yellow-500/30">
+                            <div class="flex justify-between items-center mb-2.5">
+                                <label class="text-[11px] font-bold text-yellow-400 uppercase tracking-wider">Adjust Top Seal Dimension</label>
+                                <span id="logoSizeVal" class="text-xs font-mono font-black text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/30">92px</span>
+                            </div>
+                            <input type="range" id="logoSizeSlider" min="60" max="135" value="92" step="2" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-yellow-400" oninput="updateLogoSize(this.value)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EXPORT ACTIONS -->
+            <div class="pro-panel rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 no-print">
+                <div>
+                    <h3 class="text-sm font-black text-yellow-400 uppercase text-center sm:text-left">Export Verified UK Certificate</h3>
+                    <p class="text-xs opacity-75 text-center sm:text-left">Full-scale A4 high-resolution export via UK IPO Registry Terminal.</p>
+                </div>
+                <div class="flex flex-wrap gap-3 w-full sm:w-auto justify-center">
+                    <button id="btnExportPdf" onclick="downloadPDF()" class="flex-1 sm:flex-none px-5 py-3.5 btn-gold text-xs flex items-center justify-center gap-2">
+                        <i data-lucide="file-text" class="w-4 h-4"></i> <span id="btnExportPdfText">DOWNLOAD PDF</span>
+                    </button>
+                    <button id="btnExportJpg" onclick="downloadJPG()" class="flex-1 sm:flex-none px-5 py-3.5 btn-sub text-xs flex items-center justify-center gap-2 text-yellow-400 font-bold">
+                        <i data-lucide="image" class="w-4 h-4"></i> <span id="btnExportJpgText">DOWNLOAD JPG</span>
+                    </button>
+                    <button onclick="triggerPrintA4()" class="flex-1 sm:flex-none px-5 py-3.5 btn-sub text-xs flex items-center justify-center gap-2 text-emerald-400 font-bold border-emerald-500/40">
+                        <i data-lucide="printer" class="w-4 h-4"></i> PRINT A4
+                    </button>
+                </div>
+            </div>
+
+            <!-- =========================================================
+                 LIVE CONNECTED UK TRADE MARKS REGISTRY CERTIFICATE (A4)
+                 ========================================================= -->
+            <div class="certificate-viewport-wrapper">
+                <div id="certificateCanvasArea" class="certificate-container">
+                    <div class="outer-border">
+                        <div class="inner-border">
+                            
+                            <!-- Top Header Section -->
+                            <div class="grid grid-cols-12 items-end relative">
+                                <div class="col-span-4 header-title-left pb-0.5">
+                                    TRADE MARKS<br>REGISTRY
+                                </div>
+
+                                <!-- Central Seal Container with Original Restored Seal Link -->
+                                <div class="col-span-4 flex justify-center -mb-3 z-10">
+                                    <div id="sealContainerBox" style="width: 92px; height: 92px;" class="bg-[#ffffff] rounded-full p-0.5 flex items-center justify-center shadow-sm overflow-hidden">
+                                        <img id="centralSealImg" src="https://exporya.b-cdn.net/wp-content/uploads/2024/02/exporya-trademark.jpg" alt="The Patent Office Seal" class="w-full h-full object-contain rounded-full" />
+                                    </div>
+                                </div>
+
+                                <div class="col-span-4 header-title-right pb-0.5">
+                                    REGISTRATION<br>CERTIFICATE
+                                </div>
+                            </div>
+
+                            <!-- Header Divider Line -->
+                            <div class="relative flex items-center justify-between mb-1.5">
+                                <div class="w-[31%] border-t border-black"></div>
+                                <div class="w-[31%] border-t border-black"></div>
+                            </div>
+
+                            <!-- Sub-header Act Info -->
+                            <div class="flex justify-between text-[11px] mb-4 px-0.5">
+                                <div>Trade Marks Act 1994 of Great</div>
+                                <div>Britain and Northern Ireland</div>
+                            </div>
+
+                            <!-- Registration Notice Line -->
+                            <div class="text-center text-[12px] my-3">
+                                The mark shown below has been registered under No. <span id="valTmNumber">2270061</span> as of the date <span id="valRegDate">15 May 2001</span>.
+                            </div>
+
+                            <!-- Trade Mark Title -->
+                            <div id="valProprietorBrand" class="text-center text-[21px] font-bold tracking-[2px] uppercase my-3">
+                                SOLAR NAVIGATOR
+                            </div>
+
+                            <!-- Registered Brand Graphic Silhouette / Custom Uploaded Brand Logo -->
+                            <div id="registeredMarkGraphic" class="flex justify-center my-4">
+                                <svg id="defaultBirdSvg" width="220" height="70" viewBox="0 0 300 100" fill="#000000">
+                                    <path d="M 150 72 
+                                             C 135 58, 100 24, 55 18 
+                                             C 35 15, 12 20, 0 30 
+                                             C 18 34, 38 37, 58 44 
+                                             C 82 52, 112 63, 138 72 
+                                             C 120 78, 98 84, 78 86 
+                                             C 102 85, 126 80, 142 75 
+                                             C 146 78, 150 83, 150 88 
+                                             C 150 83, 154 78, 158 75 
+                                             C 174 80, 198 85, 222 86 
+                                             C 202 84, 180 78, 162 72 
+                                             C 188 63, 218 52, 242 44 
+                                             C 262 37, 282 34, 300 30 
+                                             C 288 20, 265 15, 245 18 
+                                             C 200 24, 165 58, 150 72 Z" />
+                                </svg>
+                                <img id="customBrandMarkImg" alt="Registered Trade Mark Device" class="hidden max-h-[85px] max-w-[240px] object-contain" />
+                            </div>
+
+                            <!-- Classes List -->
+                            <div class="mt-2 text-[11.5px]">
+                                <div class="mb-1.5">The mark has been registered in respect of:</div>
+
+                                <div id="valClassesContainer"></div>
+
+                                <div class="mt-3 text-[11.5px]">
+                                    In the name of <span id="valProprietorName">Nelson James Kruschandl</span>
+                                </div>
+                            </div>
+
+                            <!-- Footer & Signature Section -->
+                            <div class="mt-6 pt-1">
+                                <div class="border-t border-black mb-2"></div>
+                                
+                                <div class="text-[11.5px]">
+                                    <div>Sealed this day at my direction</div>
+                                    
+                                    <!-- Registrar Handwritten Signature -->
+                                    <div class="my-0.5 h-7 flex items-center pl-0.5">
+                                        <span id="valSignatureText" class="handwritten-signature">Alison Brimelow</span>
+                                    </div>
+
+                                    <div class="text-[10.5px] font-bold tracking-wide uppercase">
+                                        <span id="valSignerName">ALISON BRIMELOW</span>, REGISTRAR
+                                    </div>
+                                    <div class="text-[10.5px] mt-0.5">
+                                        <span class="font-bold">DATE</span> <span id="valEntryDate">19 October 2001</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TAB 3: USER INSTRUCTION & FEATURE WIKI -->
+        <div id="tabUserNotepad" class="admin-tab pro-panel rounded-2xl p-6 shadow-2xl hidden space-y-6 no-print">
+            <div class="flex items-center justify-between border-b border-yellow-500/20 pb-3">
+                <h2 class="text-sm font-black text-yellow-400 uppercase flex items-center gap-2">
+                    <i data-lucide="book-open" class="w-4 h-4"></i> User Instruction & Feature Wiki
+                </h2>
+                <span class="text-[10px] gold-badge px-2.5 py-1 rounded-full font-bold">AUTOSAVED</span>
+            </div>
+            
+            <div class="flex items-center justify-between mb-2">
+                <button onclick="goBackToMain()" class="px-4 py-2 btn-sub text-xs flex items-center gap-2 font-bold text-yellow-400">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Back
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                <div class="p-4 bg-slate-900/80 rounded-xl border border-yellow-500/20 space-y-2">
+                    <h3 class="font-bold text-yellow-400 flex items-center gap-1.5"><i data-lucide="award" class="w-3.5 h-3.5"></i> 1. Certificate Rendering</h3>
+                    <p class="text-slate-300 text-[11px] leading-relaxed">Original Patent Office Seal (`exporya-trademark.jpg`) restored directly without replacement.</p>
+                </div>
+                <div class="p-4 bg-slate-900/80 rounded-xl border border-yellow-500/20 space-y-2">
+                    <h3 class="font-bold text-yellow-400 flex items-center gap-1.5"><i data-lucide="users" class="w-3.5 h-3.5"></i> 2. IAM User Enrolment</h3>
+                    <p class="text-slate-300 text-[11px] leading-relaxed">Passwords are hashed via Web Crypto SHA-256 before saving to Firebase or local fallback storage.</p>
+                </div>
+                <div class="p-4 bg-slate-900/80 rounded-xl border border-yellow-500/20 space-y-2">
+                    <h3 class="font-bold text-yellow-400 flex items-center gap-1.5"><i data-lucide="terminal" class="w-3.5 h-3.5"></i> 3. Local Network Bridge</h3>
+                    <p class="text-slate-300 text-[11px] leading-relaxed">Connects to `node diagnostic-server.js` on port 9090 to perform 8-layer AST, handler, and DOM line-by-line audits.</p>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <label class="block text-xs font-bold text-yellow-400 uppercase">Personal Terminal Notepad (Persistent Storage)</label>
+                <textarea id="userCustomNotes" rows="5" class="w-full input-dark rounded-xl p-3.5 text-xs outline-none font-mono" placeholder="Write operator notes, case reference numbers, or custom guidelines..."></textarea>
+            </div>
+            <button onclick="saveUserCustomNotes()" class="px-5 py-2.5 btn-gold text-xs flex items-center gap-2">
+                <i data-lucide="save" class="w-4 h-4"></i> Save Personal Notes
+            </button>
+        </div>
+
+    </div>
+
+    <!-- EXTERNAL FIREBASE CONFIG & APPLICATION ENGINE -->
+    <script src="firebase-config.js" onerror="window.__firebaseConfigScriptMissing = true;"></script>
+    <script>
+        (function() {
+            // Original Seal URL Restored Directly
+            const DEFAULT_SEAL_URL = 'https://exporya.b-cdn.net/wp-content/uploads/2024/02/exporya-trademark.jpg';
+
+            const DEFAULT_CLASSES_TEXT = [
+                "Class 12: Vehicles; apparatus for locomotion by land or water; parts and fittings for land or water vehicles.",
+                "Class 16: Paper and cardboard goods; printed matter; bookbinding material; photographs; stationery; artists' materials; office requisites (except furniture); instructional and teaching materials (except apparatus); plastic materials for packaging (not included in other classes); playing cards; printers' type; books; posters; pens and pencils.",
+                "Class 25: Clothing; footwear and headwear; clothing accessories.",
+                "Class 28: Games and playthings; sporting articles (not included in other classes).",
+                "Class 30: Confectionery; ices; coffee, tea, sugar, flour and preparations made from cereals; honey and treacle.",
+                "Class 32: Beers; mineral and aerated waters and other non-alcoholic drinks; fruit drinks and fruit juices; syrups and other preparations for making beverages."
+            ].join('\n');
+
+            let lastDiagnosticReport = null;
+            const runtimeErrorsLog = [];
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
+            function getDb() {
+                return window.firebaseDatabaseInstance || null;
+            }
+
+            function sanitizeInput(str) {
+                if (typeof str !== 'string') return String(str ?? '');
+                return str.replace(/&/g, "&amp;")
+                          .replace(/</g, "&lt;")
+                          .replace(/>/g, "&gt;")
+                          .replace(/"/g, "&quot;")
+                          .replace(/'/g, "&#039;");
+            }
+
+            async function sha256Hash(message) {
+                const msgBuffer = new TextEncoder().encode(message);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+
+            function isSystemLockedDown() {
+                return localStorage.getItem('ssi_system_lockdown') === 'true';
+            }
+
+            async function recordSecurityEvent(eventLabel, authHash = 'SHA256-Audit') {
+                const entry = {
+                    time: Date.now(),
+                    email: eventLabel,
+                    authHash: authHash,
+                    ip: currentTelemetry.ip || '127.0.0.1'
+                };
+                const logs = JSON.parse(localStorage.getItem('ssi_admin_security_logs') || '[]');
+                logs.unshift(entry);
+                if (logs.length > 50) logs.length = 50;
+                localStorage.setItem('ssi_admin_security_logs', JSON.stringify(logs));
+                try {
+                    const db = getDb();
+                    if (db) await db.ref('security/logs').push().set(entry);
+                } catch (e) {}
+                renderSecurityLogs();
+            }
+
+            // =========================================================
+            // ORIGINAL SEAL IMAGE HANDLER (NO SVG REPLACEMENT)
+            // =========================================================
+            function initializeSealImageHandler() {
+                const sealImg = document.getElementById('centralSealImg');
+                const statusMsg = document.getElementById('logoUploadStatusMsg');
+                if (!sealImg) return;
+
+                sealImg.addEventListener('load', function() {
+                    if (statusMsg && sealImg.src.includes('exporya-trademark.jpg')) {
+                        statusMsg.innerHTML = `<span class="text-emerald-400 font-bold">✅ আসল সার্টিফিকেট সিল সফলভাবে লোড হয়েছে (${sealImg.naturalWidth}×${sealImg.naturalHeight}px)</span> — Max Upload: <b>2 MB</b>.`;
+                    }
+                    const metricSeal = document.getElementById('diagMetricSeal');
+                    if (metricSeal) {
+                        metricSeal.textContent = `READY (${sealImg.naturalWidth}×${sealImg.naturalHeight})`;
+                        metricSeal.className = 'font-bold text-emerald-400';
+                    }
+                });
+
+                sealImg.addEventListener('error', function() {
+                    if (statusMsg) {
+                        statusMsg.innerHTML = `<span class="text-rose-400 font-bold">⚠️ সিল লোড হতে সমস্যা হয়েছে — রিলোড বাটনে ক্লিক করুন বা ইন্টারনেট সংযোগ পরীক্ষা করুন।</span>`;
+                    }
+                    const metricSeal = document.getElementById('diagMetricSeal');
+                    if (metricSeal) {
+                        metricSeal.textContent = 'LOAD FAILED';
+                        metricSeal.className = 'font-bold text-rose-400';
+                    }
+                });
+
+                if (!sealImg.getAttribute('src')) {
+                    sealImg.src = DEFAULT_SEAL_URL;
+                }
+            }
+
+            window.reloadOriginalSeal = function() {
+                const sealImg = document.getElementById('centralSealImg');
+                const uploadInput = document.getElementById('uploadMarkLogo');
+                if (uploadInput) uploadInput.value = '';
+                if (sealImg) {
+                    sealImg.src = DEFAULT_SEAL_URL + '?t=' + Date.now();
+                }
+            };
+
+            // =========================================================
+            // NETWORK & FORENSIC TELEMETRY
+            // =========================================================
+            let currentTelemetry = {
+                ip: 'Detecting...',
+                isp: 'Detecting...',
+                city: '',
+                country: '',
+                fingerprint: '',
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+                userAgent: navigator.userAgent
+            };
+
+            async function computeDeviceFingerprint() {
+                const rawTraits = [
+                    navigator.userAgent,
+                    navigator.language,
+                    screen.width + 'x' + screen.height,
+                    screen.colorDepth,
+                    Intl.DateTimeFormat().resolvedOptions().timeZone
+                ].join('|');
+                const fullHash = await sha256Hash(rawTraits);
+                return 'fp_' + fullHash.substring(0, 16);
+            }
+
+            window.fetchLiveNetworkTelemetry = async function() {
+                currentTelemetry.fingerprint = await computeDeviceFingerprint();
+                document.getElementById('forensicFpVal').textContent = currentTelemetry.fingerprint;
+                document.getElementById('forensicTzVal').textContent = `${currentTelemetry.timezone} (${navigator.language})`;
+
+                try {
+                    const response = await fetch('https://ipapi.co/json/');
+                    if (!response.ok) throw new Error('ipapi rate limited');
+                    const data = await response.json();
+                    currentTelemetry.ip = data.ip || 'Unknown';
+                    currentTelemetry.isp = data.org || data.asn || 'Standard ISP';
+                    currentTelemetry.city = data.city || '';
+                    currentTelemetry.country = data.country_name || '';
+                    document.getElementById('forensicIpVal').textContent = `${currentTelemetry.ip} (${currentTelemetry.city}, ${currentTelemetry.country})`;
+                    document.getElementById('forensicIspVal').textContent = currentTelemetry.isp;
+                    document.getElementById('forensicGeoCoords').textContent = `LAT: ${data.latitude || 'N/A'} | LON: ${data.longitude || 'N/A'} | ASN: ${data.asn || 'N/A'}`;
+                } catch (err) {
+                    try {
+                        const fallbackRes = await fetch('https://ipwho.is/');
+                        const fb = await fallbackRes.json();
+                        currentTelemetry.ip = fb.ip || 'Localhost/LAN';
+                        currentTelemetry.isp = (fb.connection && fb.connection.isp) ? fb.connection.isp : 'Local Network';
+                        document.getElementById('forensicIpVal').textContent = `${currentTelemetry.ip} (${fb.city || 'LAN'}, ${fb.country || ''})`;
+                        document.getElementById('forensicIspVal').textContent = currentTelemetry.isp;
+                        document.getElementById('forensicGeoCoords').textContent = `LIVE CONNECTION VERIFIED (${fb.ip})`;
+                    } catch (innerErr) {
+                        currentTelemetry.ip = window.location.hostname || '127.0.0.1';
+                        currentTelemetry.isp = 'Local Network Interface';
+                        document.getElementById('forensicIpVal').textContent = currentTelemetry.ip;
+                        document.getElementById('forensicIspVal').textContent = currentTelemetry.isp;
+                    }
+                }
+                syncActiveDeviceSession();
+            };
+
+            function syncActiveDeviceSession() {
+                const sessionEntry = {
+                    ip: currentTelemetry.ip,
+                    isp: currentTelemetry.isp,
+                    fingerprint: currentTelemetry.fingerprint,
+                    platform: navigator.platform || 'Browser',
+                    lastSeen: new Date().toLocaleTimeString(),
+                    status: 'ONLINE'
+                };
+                const sessions = JSON.parse(localStorage.getItem('ssi_active_device_sessions') || '[]');
+                const existingIndex = sessions.findIndex(s => s.fingerprint === sessionEntry.fingerprint);
+                if (existingIndex >= 0) {
+                    sessions[existingIndex] = sessionEntry;
+                } else {
+                    sessions.push(sessionEntry);
+                }
+                localStorage.setItem('ssi_active_device_sessions', JSON.stringify(sessions));
+                renderDeviceSessions();
+            }
+
+            function renderDeviceSessions() {
+                const container = document.getElementById('deviceListContainer');
+                if (!container) return;
+                const sessions = JSON.parse(localStorage.getItem('ssi_active_device_sessions') || '[]');
+                if (sessions.length === 0) {
+                    container.innerHTML = `<div class="p-3 text-center text-xs text-slate-400">No active device sessions recorded.</div>`;
+                    return;
+                }
+                container.innerHTML = sessions.map(s => `
+                    <div class="p-3 bg-slate-900/80 border border-slate-700/60 rounded-xl flex justify-between items-center text-xs">
+                        <div>
+                            <span class="font-bold text-sky-400">${sanitizeInput(s.platform)} Session (${sanitizeInput(s.lastSeen)})</span>
+                            <p class="text-[10px] text-slate-400 font-mono">IP: ${sanitizeInput(s.ip)} | Fingerprint: ${sanitizeInput(s.fingerprint)}</p>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 font-bold">${sanitizeInput(s.status)}</span>
+                    </div>
+                `).join('');
+            }
+
+            // =========================================================
+            // NICE CLASSIFICATION PARSER & RENDERER
+            // =========================================================
+            function renderNiceClassesFromInput() {
+                const specInput = document.getElementById('inputClassesSpec');
+                const container = document.getElementById('valClassesContainer');
+                if (!specInput || !container) return;
+
+                const rawLines = specInput.value.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+                if (rawLines.length === 0) {
+                    container.innerHTML = '';
+                    return;
+                }
+
+                container.innerHTML = rawLines.map(line => {
+                    const colonIdx = line.indexOf(':');
+                    if (colonIdx !== -1) {
+                        const heading = line.substring(0, colonIdx + 1).trim();
+                        const body = line.substring(colonIdx + 1).trim();
+                        return `
+                            <div>
+                                <div class="class-heading">${sanitizeInput(heading)}</div>
+                                <div class="class-body">${sanitizeInput(body)}</div>
+                            </div>
+                        `;
+                    }
+                    return `<div class="class-body">${sanitizeInput(line)}</div>`;
+                }).join('');
+            }
+
+            window.restoreDefaultClasses = function() {
+                const specInput = document.getElementById('inputClassesSpec');
+                if (specInput) {
+                    specInput.value = DEFAULT_CLASSES_TEXT;
+                    renderNiceClassesFromInput();
+                    syncFields();
+                }
+            };
+
+            // =========================================================
+            // 100% ACCURATE MULTI-LAYER DIAGNOSTIC ENGINE (BROWSER + LOCAL SERVER 9090)
+            // =========================================================
+            function calculateLocalStorageUsageKB() {
+                let totalChars = 0;
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    const v = localStorage.getItem(k);
+                    totalChars += (k ? k.length : 0) + (v ? v.length : 0);
+                }
+                return ((totalChars * 2) / 1024).toFixed(2);
+            }
+
+            function auditCertificateBindings() {
+                const pairs = [
+                    { inputId: 'inputTmNumber', targetId: 'valTmNumber', label: 'Trade Mark Number' },
+                    { inputId: 'inputBrandName', targetId: 'valProprietorBrand', label: 'Brand Title' },
+                    { inputId: 'inputProprietor', targetId: 'valProprietorName', label: 'Proprietor Name' },
+                    { inputId: 'inputRegDate', targetId: 'valRegDate', label: 'Effective Date' },
+                    { inputId: 'inputEntryDate', targetId: 'valEntryDate', label: 'Entry Date' },
+                    { inputId: 'inputSignature', targetId: 'valSignatureText', label: 'Signature Script' },
+                    { inputId: 'inputSignature', targetId: 'valSignerName', label: 'Registrar Uppercase Name', uppercase: true }
+                ];
+
+                const results = [];
+                let syncedCount = 0;
+
+                pairs.forEach(p => {
+                    const inEl = document.getElementById(p.inputId);
+                    const outEl = document.getElementById(p.targetId);
+                    if (!inEl || !outEl) {
+                        results.push({
+                            ok: false,
+                            label: p.label,
+                            detail: `Missing DOM node (#${p.inputId} -> #${p.targetId})`
+                        });
+                        return;
+                    }
+                    const expected = p.uppercase ? inEl.value.trim().toUpperCase() : inEl.value.trim();
+                    const actual = outEl.textContent.trim();
+                    const isMatch = expected === actual && actual.length > 0;
+                    if (isMatch) syncedCount++;
+                    results.push({
+                        ok: isMatch,
+                        label: p.label,
+                        detail: isMatch ? `"${actual}"` : `Mismatch (Input: "${expected}" vs Cert: "${actual}")`
+                    });
+                });
+
+                return { total: pairs.length, syncedCount, results };
+            }
+
+            function auditAllDomEventHandlers() {
+                const brokenHandlers = [];
+                const elementsWithHandlers = document.querySelectorAll('[onclick], [oninput], [onchange]');
+                elementsWithHandlers.forEach((el) => {
+                    ['onclick', 'oninput', 'onchange'].forEach((attr) => {
+                        const code = el.getAttribute(attr);
+                        if (!code) return;
+                        const fnMatch = code.trim().match(/^(?:window\.)?([a-zA-Z0-9_$]+)\s*\(/);
+                        if (fnMatch) {
+                            const fnName = fnMatch[1];
+                            if (typeof window[fnName] !== 'function') {
+                                brokenHandlers.push({
+                                    tag: el.tagName.toLowerCase(),
+                                    id: el.id || '(no-id)',
+                                    attr,
+                                    fnName,
+                                    code
+                                });
+                            }
+                        }
+                    });
+                });
+                return { totalChecked: elementsWithHandlers.length, brokenHandlers };
+            }
+
+            function auditRequiredLibraries() {
+                return [
+                    { name: 'html2canvas Engine', ok: typeof window.html2canvas === 'function' },
+                    { name: 'jsPDF A4 Exporter', ok: !!(window.jspdf && window.jspdf.jsPDF) },
+                    { name: 'Lucide Vector Icons', ok: typeof window.lucide !== 'undefined' },
+                    { name: 'Web Crypto SHA-256', ok: !!(window.crypto && window.crypto.subtle) },
+                    { name: 'Firebase SDK Suite', ok: typeof window.firebase !== 'undefined' }
+                ];
+            }
+
+            window.repairAndSyncAllBindings = function() {
+                syncFields();
+                const sealImg = document.getElementById('centralSealImg');
+                if (sealImg && (!sealImg.complete || sealImg.naturalWidth === 0)) {
+                    reloadOriginalSeal();
+                }
+                runAdminIntelligentDetector();
+            };
+
+            window.exportDiagnosticReportJSON = function() {
+                if (!lastDiagnosticReport) {
+                    runAdminIntelligentDetector();
+                }
+                const blob = new Blob([JSON.stringify(lastDiagnosticReport || { timestamp: Date.now() }, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `SSI_Diagnostic_Audit_${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+
+            window.runAdminIntelligentDetector = async function() {
+                const startPerf = performance.now();
+                const resultsContainer = document.getElementById('diagnosticResultsContent');
+                const bridgeInput = document.getElementById('terminalBridgeUrlInput');
+                if (!resultsContainer) return;
+
+                const bridgeUrl = (bridgeInput && bridgeInput.value.trim()) ? bridgeInput.value.trim().replace(/\/$/, '') : `http://${window.location.hostname || 'localhost'}:9090`;
+                resultsContainer.innerHTML = `<p class="text-yellow-400">⏳ লোকাল ডায়াগনস্টিক সার্ভার (${sanitizeInput(bridgeUrl)}/scan), ইভেন্ট হ্যান্ডলার, DOM বাইন্ডিং ও সার্টিফিকেট সিল পরীক্ষা করা হচ্ছে...</p>`;
+
+                // 1. Audit Storage
+                const storageKB = calculateLocalStorageUsageKB();
+                const metricStorage = document.getElementById('diagMetricStorage');
+                if (metricStorage) metricStorage.textContent = `${storageKB} KB (${localStorage.length} keys)`;
+
+                // 2. Audit Certificate Live Bindings
+                const bindingAudit = auditCertificateBindings();
+                const metricBinding = document.getElementById('diagMetricBinding');
+                if (metricBinding) {
+                    metricBinding.textContent = `${bindingAudit.syncedCount}/${bindingAudit.total} SYNCED`;
+                    metricBinding.className = bindingAudit.syncedCount === bindingAudit.total ? 'font-bold text-emerald-400' : 'font-bold text-rose-400';
+                }
+
+                // 3. Audit Seal Image Asset
+                const sealImg = document.getElementById('centralSealImg');
+                const sealLoaded = !!(sealImg && sealImg.complete && sealImg.naturalWidth > 0);
+                const sealDims = sealLoaded ? `${sealImg.naturalWidth}×${sealImg.naturalHeight}px` : 'Not Loaded';
+                const metricSeal = document.getElementById('diagMetricSeal');
+                if (metricSeal) {
+                    metricSeal.textContent = sealLoaded ? `READY (${sealDims})` : 'WARNING';
+                    metricSeal.className = sealLoaded ? 'font-bold text-emerald-400' : 'font-bold text-amber-400';
+                }
+
+                // 4. Audit Export & Crypto Libraries
+                const libsAudit = auditRequiredLibraries();
+                const libsOkCount = libsAudit.filter(l => l.ok).length;
+                const metricLibs = document.getElementById('diagMetricLibs');
+                if (metricLibs) {
+                    metricLibs.textContent = `${libsOkCount}/${libsAudit.length} ACTIVE`;
+                    metricLibs.className = libsOkCount === libsAudit.length ? 'font-bold text-emerald-400' : 'font-bold text-amber-400';
+                }
+
+                // 5. Deep Browser DOM & Event Handler Audit
+                const localIssues = [];
+                const allElsWithId = document.querySelectorAll('[id]');
+                const idCounts = {};
+                allElsWithId.forEach(el => {
+                    idCounts[el.id] = (idCounts[el.id] || 0) + 1;
+                });
+                Object.keys(idCounts).forEach(idKey => {
+                    if (idCounts[idKey] > 1) {
+                        localIssues.push({
+                            line: 'DOM Tree',
+                            severity: 'CRITICAL',
+                            feature: 'Duplicate DOM ID',
+                            issue: `ডুপ্লিকেট ID "${idKey}" (${idCounts[idKey]} বার ব্যবহৃত)`,
+                            impact: 'জাভাস্ক্রিপ্ট এলিমেন্ট সিলেকশন ও ডেটা বাইন্ডিংয়ে কনফ্লিক্ট হতে পারে।',
+                            fix: `প্রতিটি এলিমেন্টে ইউনিক ID ব্যবহার করুন।`
+                        });
+                    }
+                });
+
+                const handlerAudit = auditAllDomEventHandlers();
+                handlerAudit.brokenHandlers.forEach(bh => {
+                    localIssues.push({
+                        line: `<${bh.tag} id="${bh.id}">`,
+                        severity: 'CRITICAL',
+                        feature: `Broken UI Button (${bh.attr})`,
+                        issue: `বাটনে "${bh.fnName}()" কল করা হয়েছে কিন্তু স্ক্রিপ্টে এই ফাংশনটি নেই!`,
+                        impact: 'এই বাটনে ক্লিক করলে ReferenceError হবে এবং বাটনটি কাজ করবে না।',
+                        fix: `window.${bh.fnName} ফাংশনটি স্ক্রিপ্টে যোগ করুন।`,
+                        codeSnippet: bh.code
+                    });
+                });
+
+                if (window.__firebaseConfigScriptMissing) {
+                    localIssues.push({
+                        line: 'firebase-config.js',
+                        severity: 'LOW',
+                        feature: 'Database Config Mode',
+                        issue: 'এক্সটার্নাল firebase-config.js ফাইল পাওয়া যায়নি (Local Vault Fallback সক্রিয়)।',
+                        impact: 'অ্যাপটি ক্লাউড ডাটাবেসের বদলে ব্রাউজারের LocalStorage-এ ডাটা সেভ করছে।',
+                        fix: 'ক্লাউড সিঙ্ক চাইলে প্রজেক্ট ফোল্ডারে firebase-config.js যুক্ত করুন।'
+                    });
+                }
+
+                if (!sealLoaded) {
+                    localIssues.push({
+                        line: '#centralSealImg',
+                        severity: 'HIGH',
+                        feature: 'Patent Office Seal Image',
+                        issue: 'সার্টিফিকেট সিল ইমেজ এখনো সম্পূর্ণ লোড হয়নি বা নেটওয়ার্ক ব্লকড',
+                        impact: 'সার্টিফিকেটের মাঝখানের প্যাটেন্ট অফিস সিল খালি দেখাতে পারে।',
+                        fix: '"Reload Original Seal" বাটনে ক্লিক করুন।'
+                    });
+                }
+
+                bindingAudit.results.forEach(b => {
+                    if (!b.ok) {
+                        localIssues.push({
+                            line: 'Certificate Binding',
+                            severity: 'HIGH',
+                            feature: b.label,
+                            issue: `${b.label} সিঙ্ক হয়নি (${b.detail})`,
+                            impact: 'কন্ট্রোল প্যানেলের সাথে সার্টিফিকেট টেক্সটের অমিল থাকবে।',
+                            fix: '"অটো-সিঙ্ক ও রিপেয়ার" বাটনে ক্লিক করুন।'
+                        });
+                    }
+                });
+
+                const metricDom = document.getElementById('diagMetricDom');
+                if (metricDom) {
+                    metricDom.textContent = handlerAudit.brokenHandlers.length === 0
+                        ? `CLEAN (${allElsWithId.length} IDs / ${handlerAudit.totalChecked} Btns)`
+                        : `${handlerAudit.brokenHandlers.length} BROKEN BTNS`;
+                    metricDom.className = handlerAudit.brokenHandlers.length === 0 ? 'font-bold text-emerald-400' : 'font-bold text-rose-400';
+                }
+
+                // 6. Send Live Browser Telemetry to Local Terminal Bridge (POST /scan) for 100% File + Runtime Audit
+                let bridgeConnected = false;
+                let bridgeData = null;
+                let bridgePingMs = 0;
+
+                const currentFileName = window.location.pathname.split('/').pop() || 'index.html';
+                const telemetryPayload = {
+                    fileName: currentFileName,
+                    sealLoaded,
+                    sealSrc: sealImg ? sealImg.src : '',
+                    unsyncedBindings: bindingAudit.results.filter(r => !r.ok),
+                    brokenHandlers: handlerAudit.brokenHandlers,
+                    runtimeErrors: runtimeErrorsLog
+                };
+
+                try {
+                    const bridgeStart = performance.now();
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 2500);
+                    const res = await fetch(`${bridgeUrl}/scan`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(telemetryPayload),
+                        cache: 'no-store',
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId);
+                    bridgePingMs = Math.round(performance.now() - bridgeStart);
+                    if (res.ok) {
+                        bridgeData = await res.json();
+                        bridgeConnected = true;
+                    }
+                } catch (bridgeErr) {
+                    bridgeConnected = false;
+                }
+
+                const metricBridge = document.getElementById('diagMetricBridge');
+                if (metricBridge) {
+                    metricBridge.textContent = bridgeConnected ? `ONLINE (${bridgePingMs}ms)` : 'BROWSER MODE';
+                    metricBridge.className = bridgeConnected ? 'font-bold text-emerald-400' : 'font-bold text-sky-400';
+                }
+
+                const totalScanMs = Math.round(performance.now() - startPerf);
+
+                lastDiagnosticReport = {
+                    timestamp: new Date().toISOString(),
+                    scanDurationMs: totalScanMs,
+                    bridgeConnected,
+                    bridgeUrl,
+                    totalDomIdsChecked: allElsWithId.length,
+                    totalHandlersChecked: handlerAudit.totalChecked,
+                    sealStatus: { loaded: sealLoaded, dimensions: sealDims, src: sealImg ? sealImg.src : null },
+                    certificateBindings: bindingAudit,
+                    libraries: libsAudit,
+                    storageUsageKB: storageKB,
+                    serverReport: bridgeData,
+                    browserIssues: localIssues,
+                    runtimeErrors: runtimeErrorsLog
+                };
+
+                const bindingBadgesHtml = bindingAudit.results.map(b => `
+                    <span class="px-2 py-0.5 rounded text-[10px] border ${b.ok ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-rose-500/20 border-rose-500/40 text-rose-300'}">
+                        ${b.ok ? '✓' : '✗'} ${sanitizeInput(b.label)}
+                    </span>
+                `).join('');
+
+                const libsBadgesHtml = libsAudit.map(l => `
+                    <span class="px-2 py-0.5 rounded text-[10px] border ${l.ok ? 'bg-sky-500/10 border-sky-500/30 text-sky-300' : 'bg-rose-500/20 border-rose-500/40 text-rose-300'}">
+                        ${l.ok ? '●' : '○'} ${sanitizeInput(l.name)}
+                    </span>
+                `).join('');
+
+                let mainIssuesHtml = '';
+                if (bridgeConnected && bridgeData) {
+                    const serverIssues = bridgeData.issues || [];
+                    if (serverIssues.length === 0) {
+                        mainIssuesHtml = `
+                            <div class="p-3 bg-emerald-950/60 border border-emerald-500/40 rounded-xl text-emerald-300 space-y-1">
+                                <p>✅ <b>লোকাল সার্ভার সংযুক্ত (${sanitizeInput(bridgeData.serverIp || 'localhost')}:9090 • ${bridgePingMs}ms):</b></p>
+                                <p>ফাইল <code>${sanitizeInput(bridgeData.scannedFile)}</code> (মোট <b>${bridgeData.totalLines || 0}</b> লাইন, <b>${bridgeData.totalUniqueIds || allElsWithId.length}</b>টি ID এবং <b>${bridgeData.totalFunctionsVerified || 0}</b>টি ফাংশন) ১০০% নিখুঁতভাবে স্ক্যান করা হয়েছে—কোনো বাগ বা সিনট্যাক্স ত্রুটি পাওয়া যায়নি!</p>
+                            </div>
+                        `;
+                    } else {
+                        mainIssuesHtml = `
+                            <div class="text-emerald-400 font-bold mb-1">
+                                🟢 লোকাল সার্ভার সংযুক্ত (${sanitizeInput(bridgeData.serverIp)}:9090 • ফাইল: ${sanitizeInput(bridgeData.scannedFile)}) — মোট ${serverIssues.length}টি ইস্যু শনাক্ত হয়েছে:
+                            </div>
+                            ${serverIssues.map((item, idx) => `
+                                <div class="p-3 bg-slate-900/95 border border-rose-500/40 rounded-xl mb-2 space-y-1">
+                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                        <span class="text-sky-300 font-bold">[${idx + 1}] 📁 ফাইল: <span class="text-yellow-400">${sanitizeInput(bridgeData.scannedFile)} (লাইন: ${sanitizeInput(String(item.line))})</span></span>
+                                        <span class="px-2 py-0.5 bg-rose-500/20 text-rose-400 rounded text-[10px] font-bold">${sanitizeInput(item.severity)} • ${sanitizeInput(item.feature || 'Code Audit')}</span>
+                                    </div>
+                                    ${item.codeSnippet ? `<pre class="p-1.5 bg-slate-950 text-amber-200 rounded border border-slate-800 text-[10px] overflow-x-auto"><code>${sanitizeInput(item.codeSnippet)}</code></pre>` : ''}
+                                    <p class="text-rose-400">⚠️ <b>সমস্যা:</b> ${sanitizeInput(item.issue)}</p>
+                                    <p class="text-amber-300">💥 <b>প্রভাব:</b> ${sanitizeInput(item.impact)}</p>
+                                    <p class="text-emerald-300">🛠️ <b>সমাধান:</b> ${sanitizeInput(item.fix)}</p>
+                                </div>
+                            `).join('')}
+                        `;
+                    }
+                } else {
+                    if (localIssues.length === 0) {
+                        mainIssuesHtml = `
+                            <div class="p-3 bg-emerald-950/60 border border-emerald-500/40 rounded-xl text-emerald-300 space-y-1">
+                                <p>✅ <b>লাইভ ব্রাউজার ডিপ অডিট সম্পন্ন (${totalScanMs}ms):</b> মোট <b>${allElsWithId.length}টি</b> ইউনিক DOM ID, <b>${handlerAudit.totalChecked}টি</b> বাটন ইভেন্ট হ্যান্ডলার, <b>${bindingAudit.total}টি</b> সার্টিফিকেট ডেটা বাইন্ডিং এবং <b>আসল প্যাটেন্ট অফিস সিল (${sealDims})</b> সম্পূর্ণ ত্রুটিমুক্তভাবে কাজ করছে।</p>
+                                <p class="text-[10px] text-sky-300">💡 লাইন-বাই-লাইন ফাইল স্ক্যানের জন্য টার্মিনালে <code>node diagnostic-server.js</code> চালু করে "ডিপ স্ক্যান করুন" বাটনে ক্লিক করুন।</p>
+                            </div>
+                        `;
+                    } else {
+                        mainIssuesHtml = `
+                            <p class="text-amber-400 font-bold mb-1">⚠️ ইন-ব্রাউজার ডিপ অডিট রিপোর্ট (${localIssues.length}টি বিষয় পাওয়া গেছে):</p>
+                            ${localIssues.map((it, idx) => `
+                                <div class="p-2.5 bg-slate-900 border border-amber-500/30 rounded-xl mb-1.5 space-y-1">
+                                    <p class="text-yellow-400 font-bold">[${idx + 1}] লোকেশন: ${sanitizeInput(String(it.line))} (${sanitizeInput(it.feature || 'Module')}) — ${sanitizeInput(it.issue)}</p>
+                                    <p class="text-rose-300">💥 <b>প্রভাব:</b> ${sanitizeInput(it.impact)}</p>
+                                    <p class="text-emerald-300">🛠️ <b>সমাধান:</b> ${sanitizeInput(it.fix)}</p>
+                                </div>
+                            `).join('')}
+                        `;
+                    }
+                }
+
+                resultsContainer.innerHTML = `
+                    ${mainIssuesHtml}
+                    <div class="p-3 bg-slate-900/70 border border-slate-800 rounded-xl space-y-2">
+                        <div class="text-[11px] text-slate-300 font-bold">🔗 লাইভ সার্টিফিকেট ফিল্ড বাইন্ডিং স্ট্যাটাস (${bindingAudit.syncedCount}/${bindingAudit.total}):</div>
+                        <div class="flex flex-wrap gap-1.5">${bindingBadgesHtml}</div>
+                        <div class="text-[11px] text-slate-300 font-bold pt-1">⚙️ এক্সপোর্ট ও সিকিউরিটি মডিউল স্ট্যাটাস:</div>
+                        <div class="flex flex-wrap gap-1.5">${libsBadgesHtml}</div>
+                    </div>
+                `;
+            };
+
+            window.addEventListener('error', function(e) {
+                runtimeErrorsLog.push({
+                    message: e.message,
+                    lineno: e.lineno || 'N/A',
+                    time: new Date().toLocaleTimeString()
+                });
+                const resultsContainer = document.getElementById('diagnosticResultsContent');
+                if (resultsContainer) {
+                    resultsContainer.insertAdjacentHTML('afterbegin', `
+                        <div class="p-2.5 bg-rose-950/90 border border-rose-500 rounded-xl mb-2 text-xs">
+                            <p class="text-rose-400 font-bold">🚨 লাইভ রানটাইম এরর (লাইন: ${e.lineno || 'N/A'})</p>
+                            <p class="text-white">${sanitizeInput(e.message)}</p>
+                        </div>
+                    `);
+                }
+            });
+
+            window.addEventListener('unhandledrejection', function(e) {
+                const reasonMsg = e.reason ? (e.reason.message || String(e.reason)) : 'Unhandled Async Rejection';
+                runtimeErrorsLog.push({
+                    message: reasonMsg,
+                    lineno: 'Async/Promise',
+                    time: new Date().toLocaleTimeString()
+                });
+            });
+
+            // =========================================================
+            // NAVIGATION & CERTIFICATE ENGINE CONTROLS
+            // =========================================================
+            window.goBackToMain = function() {
+                switchTab('generator', false);
+            };
+
+            window.triggerAppLogout = async function() {
+                if (confirm("Are you sure you want to log out from the current secure terminal session?")) {
+                    await recordSecurityEvent('Operator Logout Session', 'SHA256-Session-End');
+                    localStorage.removeItem('ssi_active_session_token');
+                    sessionStorage.clear();
+                    window.location.reload();
+                }
+            };
+
+            window.previewMarkLogo = function(event) {
+                const file = event.target.files[0];
+                const statusMsg = document.getElementById('logoUploadStatusMsg');
+                const targetSelect = document.getElementById('uploadTargetSelect');
+                const targetMode = targetSelect ? targetSelect.value : 'topSeal';
+                if (!file) return;
+
+                const allowedTypes = ['image/jpeg', 'image/png', 'image/bmp'];
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Invalid file format! Only JPG, PNG, and BMP images are allowed.');
+                    event.target.value = '';
+                    return;
+                }
+
+                const maxSizeBytes = 2 * 1024 * 1024;
+                if (file.size > maxSizeBytes) {
+                    alert('File is too large! Maximum allowed size is 2 MB.');
+                    event.target.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (targetMode === 'topSeal') {
+                        const sealImg = document.getElementById('centralSealImg');
+                        if (sealImg) sealImg.src = e.target.result;
+                        if (statusMsg) {
+                            statusMsg.innerHTML = `<span class="text-emerald-400 font-bold">✅ কাস্টম টপ সিল সফলভাবে যুক্ত হয়েছে (${sanitizeInput(file.name)})</span>`;
+                        }
+                    } else {
+                        const defaultSvg = document.getElementById('defaultBirdSvg');
+                        const customBrandImg = document.getElementById('customBrandMarkImg');
+                        if (defaultSvg && customBrandImg) {
+                            defaultSvg.classList.add('hidden');
+                            customBrandImg.src = e.target.result;
+                            customBrandImg.classList.remove('hidden');
+                        }
+                        if (statusMsg) {
+                            statusMsg.innerHTML = `<span class="text-emerald-400 font-bold">✅ কাস্টম ব্র্যান্ড মার্ক লোগো মাঝখানে যুক্ত হয়েছে (${sanitizeInput(file.name)})</span>`;
+                        }
+                    }
+                    runAdminIntelligentDetector();
+                };
+                reader.readAsDataURL(file);
+            };
+
+            window.updateLogoSize = function(val) {
+                const label = document.getElementById('logoSizeVal');
+                if (label) label.textContent = val + 'px';
+                const box = document.getElementById('sealContainerBox');
+                if (box) {
+                    box.style.width = val + 'px';
+                    box.style.height = val + 'px';
+                }
+            };
+
+            window.removeMarkLogo = function() {
+                const uploadInput = document.getElementById('uploadMarkLogo');
+                if (uploadInput) uploadInput.value = '';
+                const defaultSvg = document.getElementById('defaultBirdSvg');
+                const customBrandImg = document.getElementById('customBrandMarkImg');
+                if (defaultSvg && customBrandImg) {
+                    customBrandImg.src = '';
+                    customBrandImg.classList.add('hidden');
+                    defaultSvg.classList.remove('hidden');
+                }
+                const sealImg = document.getElementById('centralSealImg');
+                if (sealImg) sealImg.src = DEFAULT_SEAL_URL;
+                const slider = document.getElementById('logoSizeSlider');
+                if (slider) slider.value = 92;
+                updateLogoSize(92);
+                const statusMsg = document.getElementById('logoUploadStatusMsg');
+                if (statusMsg) {
+                    statusMsg.innerHTML = 'Default Seal Active (<b>The Patent Office Seal</b>). Max Custom Upload Size: <b>2 MB</b> (JPG, PNG, BMP).';
+                }
+                runAdminIntelligentDetector();
+            };
+
+            window.syncFields = function() {
+                const valTm = document.getElementById('valTmNumber');
+                const valBrand = document.getElementById('valProprietorBrand');
+                const valProp = document.getElementById('valProprietorName');
+                const valReg = document.getElementById('valRegDate');
+                const valEntry = document.getElementById('valEntryDate');
+                const valSigText = document.getElementById('valSignatureText');
+                const valSigName = document.getElementById('valSignerName');
+
+                if (valTm) valTm.textContent = document.getElementById('inputTmNumber').value;
+                if (valBrand) valBrand.textContent = document.getElementById('inputBrandName').value;
+                if (valProp) valProp.textContent = document.getElementById('inputProprietor').value;
+                if (valReg) valReg.textContent = document.getElementById('inputRegDate').value;
+                if (valEntry) valEntry.textContent = document.getElementById('inputEntryDate').value;
+
+                const sig = document.getElementById('inputSignature').value;
+                if (valSigText) valSigText.textContent = sig;
+                if (valSigName) valSigName.textContent = sig.toUpperCase();
+
+                renderNiceClassesFromInput();
+
+                const bindingAudit = auditCertificateBindings();
+                const metricBinding = document.getElementById('diagMetricBinding');
+                if (metricBinding) {
+                    metricBinding.textContent = `${bindingAudit.syncedCount}/${bindingAudit.total} SYNCED`;
+                    metricBinding.className = bindingAudit.syncedCount === bindingAudit.total ? 'font-bold text-emerald-400' : 'font-bold text-rose-400';
+                }
+            };
+
+            ['inputTmNumber', 'inputBrandName', 'inputProprietor', 'inputRegDate', 'inputEntryDate', 'inputSignature', 'inputClassesSpec'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', syncFields);
+            });
+
+            window.applyPreset = function(type) {
+                const presets = {
+                    tech: {
+                        tm: '2270061',
+                        brand: 'SOLAR NAVIGATOR',
+                        prop: 'Nelson James Kruschandl',
+                        classes: DEFAULT_CLASSES_TEXT
+                    },
+                    biotech: {
+                        tm: '3400589',
+                        brand: 'GENOME SHIELD UK',
+                        prop: 'BIOTECH INNOVATIONS UK LTD',
+                        classes: [
+                            "Class 1: Biological preparations for use in industry, science and clinical research; diagnostic reagents and assays for laboratory use.",
+                            "Class 5: Pharmaceutical, biopharmaceutical and veterinary preparations; genetic and immunological therapeutics; clinical medical diagnostic reagents.",
+                            "Class 10: Surgical, medical and laboratory diagnostic apparatus and instruments; genomic sequencing devices.",
+                            "Class 42: Scientific and technological services; biotechnology research, DNA screening, and clinical laboratory analysis."
+                        ].join('\n')
+                    },
+                    fashion: {
+                        tm: '3511288',
+                        brand: 'AURA MAYFAIR',
+                        prop: 'AURA LUXURY LONDON LTD',
+                        classes: [
+                            "Class 3: Non-medicated cosmetics and toiletry preparations; luxury perfumery, essential oils, and skincare lotions.",
+                            "Class 14: Precious metals and their alloys; fine jewellery, cufflinks, horological and chronometric instruments; luxury watches.",
+                            "Class 18: Leather and imitations of leather; luxury handbags, travelling trunks, wallets, and bespoke luggage.",
+                            "Class 25: Haute couture clothing, tailored outerwear, luxury footwear, and bespoke headwear."
+                        ].join('\n')
+                    },
+                    fintech: {
+                        tm: '3622419',
+                        brand: 'MERLION LEDGER',
+                        prop: 'MERLION PAYTECH UK PLC',
+                        classes: [
+                            "Class 9: Downloadable cryptographic and financial management software; computer hardware and encrypted security tokens for digital payments.",
+                            "Class 35: Business auditing, financial record-keeping, data processing, and commercial administration of digital assets.",
+                            "Class 36: Financial, monetary and banking services; electronic funds transfer, payment processing, and digital asset custody.",
+                            "Class 42: Software as a service (SaaS) featuring blockchain ledger verification, cybersecurity monitoring, and financial API integration."
+                        ].join('\n')
+                    },
+                    fnb: {
+                        tm: '3733550',
+                        brand: 'CROWN ROASTERS',
+                        prop: 'BRITISH BEVERAGE CO. LTD',
+                        classes: [
+                            "Class 29: Milk, cream, butter, and plant-based milk substitutes for culinary and beverage preparation.",
+                            "Class 30: Coffee, roasted coffee beans, espresso beverages, specialty tea, cocoa, pastries, and artisan confectionery.",
+                            "Class 32: Mineral and aerated waters; non-alcoholic craft beverages, cold brew tonics, fruit drinks, and syrups.",
+                            "Class 43: Services for providing food and drink; specialty coffeehouse, café, and catering services."
+                        ].join('\n')
+                    }
+                };
+                const p = presets[type];
+                if (p) {
+                    document.getElementById('inputTmNumber').value = p.tm;
+                    document.getElementById('inputBrandName').value = p.brand;
+                    document.getElementById('inputProprietor').value = p.prop;
+                    document.getElementById('inputClassesSpec').value = p.classes;
+                    syncFields();
+                }
+            };
+
+            window.resetCertificateFields = function() {
+                document.getElementById('inputTmNumber').value = '2270061';
+                document.getElementById('inputBrandName').value = 'SOLAR NAVIGATOR';
+                document.getElementById('inputProprietor').value = 'Nelson James Kruschandl';
+                document.getElementById('inputRegDate').value = '15 May 2001';
+                document.getElementById('inputEntryDate').value = '19 October 2001';
+                document.getElementById('inputSignature').value = 'Alison Brimelow';
+                document.getElementById('inputClassesSpec').value = DEFAULT_CLASSES_TEXT;
+                removeMarkLogo();
+                syncFields();
+            };
+
+            window.randomizeTmNumber = function() {
+                document.getElementById('inputTmNumber').value = Math.floor(1000000 + Math.random() * 9000000);
+                syncFields();
+            };
+
+            window.randomizeBrandName = function() {
+                const brands = ["SOLAR NAVIGATOR", "ASTRA VANGUARD", "VERTEX QUANTUM", "BRITANNIA PRIME", "NEXUS HORIZON", "ROYAL CREST"];
+                document.getElementById('inputBrandName').value = brands[Math.floor(Math.random() * brands.length)];
+                syncFields();
+            };
+
+            window.randomizeProprietor = function() {
+                const proprietors = ["Nelson James Kruschandl", "BRITISH TELECOMMUNICATIONS PLC", "VODAFONE GROUP PLC", "UNILEVER UK PLC", "DIAGEO GREAT BRITAIN LTD", "ROLLS-ROYCE PLC"];
+                document.getElementById('inputProprietor').value = proprietors[Math.floor(Math.random() * proprietors.length)];
+                syncFields();
+            };
+
+            window.randomizeRegDate = function() {
+                const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                const d = Math.floor(Math.random() * 24) + 1;
+                const mIdx = Math.floor(Math.random() * 7);
+                const y = Math.floor(Math.random() * (2025 - 2001 + 1)) + 2001;
+                const offsetMonths = Math.floor(Math.random() * 3) + 3;
+                const entryDay = Math.min(28, d + 4);
+                document.getElementById('inputRegDate').value = `${d} ${months[mIdx]} ${y}`;
+                document.getElementById('inputEntryDate').value = `${entryDay} ${months[mIdx + offsetMonths]} ${y}`;
+                syncFields();
+            };
+
+            window.randomizeEntryDate = function() {
+                const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                const regVal = document.getElementById('inputRegDate').value.trim();
+                const parts = regVal.split(/\s+/);
+                if (parts.length === 3) {
+                    const day = parseInt(parts[0], 10) || 15;
+                    const monthIndex = months.findIndex(m => m.toLowerCase() === parts[1].toLowerCase());
+                    const year = parseInt(parts[2], 10) || 2001;
+                    if (monthIndex !== -1) {
+                        const addM = Math.floor(Math.random() * 4) + 3;
+                        const totalM = monthIndex + addM;
+                        const newYear = year + Math.floor(totalM / 12);
+                        const newMonth = months[totalM % 12];
+                        const newDay = Math.min(28, day + 3);
+                        document.getElementById('inputEntryDate').value = `${newDay} ${newMonth} ${newYear}`;
+                        syncFields();
+                        return;
+                    }
+                }
+                randomizeRegDate();
+            };
+
+            window.randomizeSignature = function() {
+                const officers = ["Alison Brimelow", "Tim Moss", "John Alty", "Dany Caves", "Adam Williams"];
+                document.getElementById('inputSignature').value = officers[Math.floor(Math.random() * officers.length)];
+                syncFields();
+            };
+
+            window.toggleSidebar = function() {
+                const sidebar = document.getElementById('slideSidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                if (sidebar.classList.contains('-translate-x-full')) {
+                    sidebar.classList.remove('-translate-x-full');
+                    overlay.classList.remove('hidden');
+                    setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+                } else {
+                    sidebar.classList.add('-translate-x-full');
+                    overlay.classList.add('opacity-0');
+                    setTimeout(() => overlay.classList.add('hidden'), 300);
+                }
+            };
+
+            window.switchTab = function(tabName, closeMenu = true) {
+                document.querySelectorAll('.admin-tab').forEach(t => t.classList.add('hidden'));
+                if (tabName === 'dashboard') document.getElementById('tabDashboard').classList.remove('hidden');
+                if (tabName === 'generator') document.getElementById('tabGenerator').classList.remove('hidden');
+                if (tabName === 'userNotepad') document.getElementById('tabUserNotepad').classList.remove('hidden');
+                if (closeMenu && !document.getElementById('slideSidebar').classList.contains('-translate-x-full')) {
+                    toggleSidebar();
+                }
+            };
+
+            // =========================================================
+            // HIGH-RESOLUTION A4 PDF & JPG EXPORT ENGINE
+            // =========================================================
+            async function renderCertificateCanvas(scaleFactor) {
+                const certArea = document.getElementById('certificateCanvasArea');
+                if (!certArea) return null;
+                certArea.classList.add('export-reset');
+                try {
+                    return await html2canvas(certArea, {
+                        scale: scaleFactor,
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: '#ffffff'
+                    });
+                } finally {
+                    certArea.classList.remove('export-reset');
+                }
+            }
+
+            window.triggerPrintA4 = function() {
+                if (isSystemLockedDown()) {
+                    recordSecurityEvent('Blocked Print Attempt (Lockdown)', 'SHA256-Lockdown-Block');
+                    alert('SECURITY LOCKDOWN ACTIVE: Certificate printing is temporarily disabled by Administrator.');
+                    return;
+                }
+                window.print();
+            };
+
+            window.downloadPDF = async function() {
+                if (isSystemLockedDown()) {
+                    await recordSecurityEvent('Blocked PDF Export (Lockdown)', 'SHA256-Lockdown-Block');
+                    alert('SECURITY LOCKDOWN ACTIVE: Certificate export is disabled by Administrator.');
+                    return;
+                }
+                if (!window.jspdf || !window.jspdf.jsPDF) {
+                    alert('jsPDF library is not loaded. Please check your network connection.');
+                    return;
+                }
+                const btn = document.getElementById('btnExportPdf');
+                const btnText = document.getElementById('btnExportPdfText');
+                if (btn) btn.disabled = true;
+                if (btnText) btnText.textContent = 'RENDERING PDF...';
+
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const canvas = await renderCertificateCanvas(2);
+                    if (!canvas) return;
+                    const imgData = canvas.toDataURL('image/jpeg', 0.98);
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
+
+                    let renderWidth = pageWidth;
+                    let renderHeight = (canvas.height * pageWidth) / canvas.width;
+
+                    if (renderHeight > pageHeight) {
+                        renderHeight = pageHeight;
+                        renderWidth = (canvas.width * pageHeight) / canvas.height;
+                    }
+                    const xOffset = (pageWidth - renderWidth) / 2;
+
+                    pdf.addImage(imgData, 'JPEG', xOffset, 0, renderWidth, renderHeight);
+                    pdf.save(`UK_TradeMark_Certificate_${document.getElementById('inputTmNumber').value}.pdf`);
+                } catch (err) {
+                    alert('PDF Export Notice: ব্রাউজার সিকিউরিটির কারণে সরাসরি প্রিন্ট ডায়ালগ ওপেন হচ্ছে। "Save as PDF" নির্বাচন করুন।');
+                    window.print();
+                } finally {
+                    if (btn) btn.disabled = false;
+                    if (btnText) btnText.textContent = 'DOWNLOAD PDF';
+                }
+            };
+
+            window.downloadJPG = async function() {
+                if (isSystemLockedDown()) {
+                    await recordSecurityEvent('Blocked JPG Export (Lockdown)', 'SHA256-Lockdown-Block');
+                    alert('SECURITY LOCKDOWN ACTIVE: Certificate export is disabled by Administrator.');
+                    return;
+                }
+                const btn = document.getElementById('btnExportJpg');
+                const btnText = document.getElementById('btnExportJpgText');
+                if (btn) btn.disabled = true;
+                if (btnText) btnText.textContent = 'RENDERING JPG...';
+
+                try {
+                    const canvas = await renderCertificateCanvas(2.5);
+                    if (!canvas) return;
+                    const link = document.createElement('a');
+                    link.download = `UK_TradeMark_Certificate_${document.getElementById('inputTmNumber').value}.jpg`;
+                    link.href = canvas.toDataURL('image/jpeg', 0.98);
+                    link.click();
+                } catch (err) {
+                    alert('JPG Export Error: ' + (err.message || err));
+                } finally {
+                    if (btn) btn.disabled = false;
+                    if (btnText) btnText.textContent = 'DOWNLOAD JPG';
+                }
+            };
+
+            // =========================================================
+            // USER VAULT, IAM & SECURITY MANAGEMENT
+            // =========================================================
+            window.saveUserCustomNotes = function() {
+                const noteContent = document.getElementById('userCustomNotes').value;
+                localStorage.setItem('ssi_user_wiki_notes', noteContent);
+                alert('Personal notes saved to persistent storage.');
+            };
+
+            const savedNotes = localStorage.getItem('ssi_user_wiki_notes');
+            if (savedNotes) {
+                const noteArea = document.getElementById('userCustomNotes');
+                if (noteArea) noteArea.value = savedNotes;
+            }
+
+            let usersRefListener = null;
+
+            function renderUsersTable(usersList) {
+                const totalUsersEl = document.getElementById('statTotalUsers');
+                const activeSessionsEl = document.getElementById('statActiveSessions');
+                if (totalUsersEl) totalUsersEl.textContent = usersList.length;
+                if (activeSessionsEl) activeSessionsEl.textContent = usersList.filter(u => u.status !== 'BANNED').length;
+
+                const tbody = document.getElementById('userTableBody');
+                if (!tbody) return;
+
+                if (usersList.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400">No subscribers registered yet.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = usersList.map(u => {
+                    const unbanKey = u.unbanKey || 'UNBAN-000000';
+                    const isActive = u.status !== 'BANNED';
+                    const shortHash = u.passwordHash ? u.passwordHash.substring(0, 12) + '...' : 'SHA256-Protected';
+                    const encodedKey = encodeURIComponent(u.key || '');
+                    const encodedEmail = encodeURIComponent(u.email || '');
+                    const encodedStatus = encodeURIComponent(u.status || 'ACTIVE');
+
+                    return `
+                        <tr class="border-b border-yellow-500/10 hover:bg-slate-900/40">
+                            <td class="py-3 px-4 font-bold text-yellow-400">
+                                <div>${sanitizeInput(u.email)}</div>
+                                <div class="text-[9px] text-slate-400 font-mono">Hash: ${sanitizeInput(shortHash)}</div>
+                            </td>
+                            <td class="py-3 px-3 text-center">
+                                <button onclick="openDeviceModal()" class="px-2.5 py-1 bg-sky-600/30 text-sky-400 rounded-lg border border-sky-500/40 text-[10px] font-bold">📱 ${Number(u.maxDevice) || 1} Allowed</button>
+                            </td>
+                            <td class="py-3 px-3 text-emerald-400 font-bold">
+                                ${Number(u.quotaUsed) || 0} / ${Number(u.limit) || 50000}
+                            </td>
+                            <td class="py-3 px-3 text-amber-400 font-mono">${sanitizeInput(u.plan || '30 Days')}</td>
+                            <td class="py-3 px-4 flex items-center gap-2">
+                                <input type="text" readonly value="${sanitizeInput(unbanKey)}" class="w-28 bg-slate-900 border border-slate-700 text-slate-300 px-2 py-1 rounded text-[10px] font-mono">
+                                <button onclick="regenerateUnbanKey(decodeURIComponent('${encodedKey}'))" class="p-1 bg-yellow-500/20 text-yellow-400 rounded border border-yellow-500/40" title="Regenerate Key">🎲</button>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="px-2.5 py-1 rounded text-[10px] ${isActive ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-rose-500/20 text-rose-400 border border-rose-500/40'} font-bold">
+                                    ${sanitizeInput(u.status || 'ACTIVE')}
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 text-right space-x-1">
+                                <button onclick="resetQuota(decodeURIComponent('${encodedKey}'))" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-bold border border-slate-700">RESET Q</button>
+                                <button onclick="sendUserNotice(decodeURIComponent('${encodedEmail}'))" class="px-2 py-1 bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 rounded text-[10px] font-bold border border-purple-500/40">NOTICE</button>
+                                <button onclick="toggleUserStatus(decodeURIComponent('${encodedKey}'), decodeURIComponent('${encodedStatus}'))" class="px-2 py-1 bg-rose-600/30 hover:bg-rose-600/50 text-rose-300 rounded text-[10px] font-bold border border-rose-500/40">${isActive ? 'BAN' : 'UNBAN'}</button>
+                                <button onclick="deleteUser(decodeURIComponent('${encodedKey}'))" class="px-2 py-1 bg-rose-700 hover:bg-rose-600 text-white rounded text-[10px] font-bold">DEL</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            function loadUsers() {
+                const db = getDb();
+                const statusBadge = document.getElementById('dbConnectionStatus');
+                if (db) {
+                    if (statusBadge) statusBadge.textContent = '🟢 Firebase Vault Connected';
+                    if (usersRefListener) db.ref('users').off('value', usersRefListener);
+                    usersRefListener = db.ref('users').on('value', snapshot => {
+                        const usersVal = snapshot.val();
+                        const usersList = [];
+                        if (usersVal && typeof usersVal === 'object') {
+                            Object.keys(usersVal).forEach(k => {
+                                const item = usersVal[k];
+                                if (item && typeof item === 'object' && item.email) {
+                                    usersList.push({ key: k, ...item });
+                                }
+                            });
+                        }
+                        renderUsersTable(usersList);
+                    }, () => {
+                        if (statusBadge) statusBadge.textContent = '🟡 Local Vault Mode (Firebase Permission Fallback)';
+                        const localUsers = JSON.parse(localStorage.getItem('ssi_local_users_vault') || '[]');
+                        renderUsersTable(localUsers);
+                    });
+                } else {
+                    if (statusBadge) statusBadge.textContent = '🟡 Local Vault Mode (Offline Fallback)';
+                    const localUsers = JSON.parse(localStorage.getItem('ssi_local_users_vault') || '[]');
+                    renderUsersTable(localUsers);
+                }
+            }
+
+            window.enrollNewUser = async function() {
+                if (isSystemLockedDown()) {
+                    await recordSecurityEvent('Blocked Enrolment Attempt (Lockdown)', 'SHA256-Lockdown-Block');
+                    alert('SECURITY LOCKDOWN ACTIVE: Cannot enroll new users while system lockdown is enabled.');
+                    return;
+                }
+
+                const email = document.getElementById('enrollEmail').value.trim();
+                const pass = document.getElementById('enrollPass').value;
+                const limit = parseInt(document.getElementById('enrollLimit').value, 10) || 50000;
+                const maxDevice = parseInt(document.getElementById('enrollDevice').value, 10) || 1;
+                const plan = document.getElementById('enrollPlan').value;
+
+                if (!email || !pass) {
+                    alert('Please enter a valid email and password.');
+                    return;
+                }
+
+                const passwordHash = await sha256Hash(pass);
+                const unbanKey = 'UNBAN-' + Math.floor(100000 + Math.random() * 900000);
+                const newUserObj = {
+                    email,
+                    passwordHash,
+                    limit,
+                    maxDevice,
+                    plan,
+                    quotaUsed: 0,
+                    status: 'ACTIVE',
+                    unbanKey,
+                    createdAt: Date.now()
+                };
+
+                let savedToFirebase = false;
+                const db = getDb();
+                if (db) {
+                    try {
+                        await db.ref('users').push().set(newUserObj);
+                        savedToFirebase = true;
+                    } catch (e) {
+                        savedToFirebase = false;
+                    }
+                }
+                if (!savedToFirebase) {
+                    const localUsers = JSON.parse(localStorage.getItem('ssi_local_users_vault') || '[]');
+                    localUsers.push({ key: 'local_' + Date.now(), ...newUserObj });
+                    localStorage.setItem('ssi_local_users_vault', JSON.stringify(localUsers));
+                    loadUsers();
+                }
+
+                await recordSecurityEvent(`Enrolled: ${email}`, passwordHash.substring(0, 14));
+                document.getElementById('enrollEmail').value = '';
+                document.getElementById('enrollPass').value = '';
+            };
+
+            window.deleteUser = async function(key) {
+                if (!confirm("Are you sure you want to delete this subscriber?")) return;
+                const db = getDb();
+                let deletedRemote = false;
+                if (db) {
+                    try {
+                        await db.ref('users/' + key).remove();
+                        deletedRemote = true;
+                    } catch (e) {
+                        deletedRemote = false;
+                    }
+                }
+                if (!deletedRemote) {
+                    const localUsers = JSON.parse(localStorage.getItem('ssi_local_users_vault') || '[]').filter(u => u.key !== key);
+                    localStorage.setItem('ssi_local_users_vault', JSON.stringify(localUsers));
+                    loadUsers();
+                }
+                await recordSecurityEvent(`Deleted Subscriber (${key})`, 'SHA256-IAM-Delete');
+            };
+
+            window.toggleUserStatus = async function(key, currentStatus) {
+                const newStatus = currentStatus === 'BANNED' ? 'ACTIVE' : 'BANNED';
+                const db = getDb();
+                let updatedRemote = false;
+                if (db) {
+                    try {
+                        await db.ref('users/' + key).update({ status: newStatus });
+                        updatedRemote = true;
+                    } catch (e) {
+                        updatedRemote = false;
+                    }
+                }
+                if (!updatedRemote) {
+                    const localUsers = JSON.parse(localStorage.getItem('ssi_local_users_vault') || '[]');
+                    const target = localUsers.find(u => u.key === key);
+                    if (target) target.status = newStatus;
+                    localStorage.setItem('ssi_local_users_vault', JSON.stringify(localUsers));
+                    loadUsers();
+                }
+                await recordSecurityEvent(`Status -> ${newStatus} (${key})`, 'SHA256-IAM-Status');
+            };
+
+            window.resetQuota = async function(key) {
+                const db = getDb();
+                let updatedRemote = false;
+                if (db) {
+                    try {
+                        await db.ref('users/' + key).update({ quotaUsed: 0 });
+                        updatedRemote = true;
+                    } catch (e) {
+                        updatedRemote = false;
+                    }
+                }
+                if (!updatedRemote) {
+                    const localUsers = JSON.parse(localStorage.getItem('ssi_local_users_vault') || '[]');
+                    const target = localUsers.find(u => u.key === key);
+                    if (target) target.quotaUsed = 0;
+                    localStorage.setItem('ssi_local_users_vault', JSON.stringify(localUsers));
+                    loadUsers();
+                }
+            };
+
+            window.regenerateUnbanKey = async function(key) {
+                const newKey = 'UNBAN-' + Math.floor(100000 + Math.random() * 900000);
+                const db = getDb();
+                let updatedRemote = false;
+                if (db) {
+                    try {
+                        await db.ref('users/' + key).update({ unbanKey: newKey });
+                        updatedRemote = true;
+                    } catch (e) {
+                        updatedRemote = false;
+                    }
+                }
+                if (!updatedRemote) {
+                    const localUsers = JSON.parse(localStorage.getItem('ssi_local_users_vault') || '[]');
+                    const target = localUsers.find(u => u.key === key);
+                    if (target) target.unbanKey = newKey;
+                    localStorage.setItem('ssi_local_users_vault', JSON.stringify(localUsers));
+                    loadUsers();
+                }
+            };
+
+            window.sendUserNotice = async function(email) {
+                const msg = prompt(`Enter official system notice for ${email}:`);
+                if (!msg || !msg.trim()) return;
+                const noticePayload = { email, message: msg.trim(), timestamp: Date.now(), senderIp: currentTelemetry.ip };
+                try {
+                    const db = getDb();
+                    if (db) await db.ref('notices').push().set(noticePayload);
+                } catch (e) {}
+                const notices = JSON.parse(localStorage.getItem('ssi_dispatched_notices') || '[]');
+                notices.push(noticePayload);
+                localStorage.setItem('ssi_dispatched_notices', JSON.stringify(notices));
+                alert(`Notice persisted for ${email}.`);
+            };
+
+            function applyPricingToUI(prices) {
+                if (!prices) return;
+                if (prices['7d']) document.getElementById('price_7d').value = prices['7d'];
+                if (prices['15d']) document.getElementById('price_15d').value = prices['15d'];
+                if (prices['20d']) document.getElementById('price_20d').value = prices['20d'];
+                if (prices['1m']) document.getElementById('price_1m').value = prices['1m'];
+                if (prices['1y']) document.getElementById('price_1y').value = prices['1y'];
+                if (prices['life']) document.getElementById('price_life').value = prices['life'];
+
+                const planSelect = document.getElementById('enrollPlan');
+                if (planSelect) {
+                    planSelect.innerHTML = `
+                        <option value="7 Days">7 Days Access (${sanitizeInput(prices['7d'] || '£49')})</option>
+                        <option value="15 Days">15 Days Access (${sanitizeInput(prices['15d'] || '£89')})</option>
+                        <option value="20 Days">20 Days Access (${sanitizeInput(prices['20d'] || '£115')})</option>
+                        <option value="1 Month">1 Month PRO (${sanitizeInput(prices['1m'] || '£149')}/mo)</option>
+                        <option value="1 Year">1 Year Enterprise (${sanitizeInput(prices['1y'] || '£1,299')}/yr)</option>
+                        <option value="Lifetime">Lifetime Master (${sanitizeInput(prices['life'] || '£3,499')})</option>
+                    `;
+                }
+            }
+
+            window.saveDynamicPrices = async function() {
+                const prices = {
+                    '7d': document.getElementById('price_7d').value.trim(),
+                    '15d': document.getElementById('price_15d').value.trim(),
+                    '20d': document.getElementById('price_20d').value.trim(),
+                    '1m': document.getElementById('price_1m').value.trim(),
+                    '1y': document.getElementById('price_1y').value.trim(),
+                    'life': document.getElementById('price_life').value.trim()
+                };
+                localStorage.setItem('ssi_dynamic_subscription_rates', JSON.stringify(prices));
+                try {
+                    const db = getDb();
+                    if (db) await db.ref('config/subscriptionRates').set(prices);
+                } catch (e) {}
+                applyPricingToUI(prices);
+                closeSubModal();
+            };
+
+            const cachedPrices = JSON.parse(localStorage.getItem('ssi_dynamic_subscription_rates') || 'null');
+            if (cachedPrices) applyPricingToUI(cachedPrices);
+
+            function renderSecurityLogs() {
+                const logs = JSON.parse(localStorage.getItem('ssi_admin_security_logs') || '[]');
+                const blockedIps = JSON.parse(localStorage.getItem('ssi_blocked_ips') || '[]');
+                const tbody = document.getElementById('securityLogTableBody');
+                if (!tbody) return;
+                if (logs.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">No security anomalies recorded.</td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = logs.map(l => {
+                    const isBanned = blockedIps.includes(l.ip);
+                    const encodedIp = encodeURIComponent(l.ip || '0.0.0.0');
+                    return `
+                        <tr class="border-b border-rose-500/10 font-mono text-[11px]">
+                            <td class="py-2.5 px-3 text-slate-400">${new Date(l.time).toLocaleTimeString()}</td>
+                            <td class="py-2.5 px-3 text-yellow-400">${sanitizeInput(l.email)}</td>
+                            <td class="py-2.5 px-3 text-rose-300">${sanitizeInput(l.authHash || 'SHA256-Event')}</td>
+                            <td class="py-2.5 px-3 text-sky-400">${sanitizeInput(l.ip)}</td>
+                            <td class="py-2.5 px-3 text-right">
+                                <button onclick="banIpAddress(decodeURIComponent('${encodedIp}'))" class="px-2 py-0.5 ${isBanned ? 'bg-slate-700 text-slate-300' : 'btn-action-rose'} text-[9px] rounded">
+                                    ${isBanned ? 'IP Banned' : 'Permaban IP'}
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            window.clearSecurityLogs = async function() {
+                localStorage.removeItem('ssi_admin_security_logs');
+                try {
+                    const db = getDb();
+                    if (db) await db.ref('security/logs').remove();
+                } catch (e) {}
+                renderSecurityLogs();
+            };
+
+            window.banIpAddress = async function(ip) {
+                const blockedIps = JSON.parse(localStorage.getItem('ssi_blocked_ips') || '[]');
+                if (!blockedIps.includes(ip)) {
+                    blockedIps.push(ip);
+                    localStorage.setItem('ssi_blocked_ips', JSON.stringify(blockedIps));
+                }
+                try {
+                    const db = getDb();
+                    if (db) await db.ref('security/blockedIps').set(blockedIps);
+                } catch (e) {}
+                renderSecurityLogs();
+            };
+
+            window.toggleTheme = function() {
+                document.body.classList.toggle('light');
+            };
+            window.setEyecareMode = function() {
+                document.body.classList.toggle('eyecare');
+            };
+            window.adjustBrightness = function(val) {
+                document.getElementById('brightnessOverlay').style.opacity = val / 100;
+                document.getElementById('dimVal').textContent = val + '%';
+            };
+
+            window.openSubRatesModal = function() { document.getElementById('subRatesModal').classList.remove('hidden'); };
+            window.closeSubModal = function() { document.getElementById('subRatesModal').classList.add('hidden'); };
+            
+            window.openContactModal = function() { document.getElementById('contactModal').classList.remove('hidden'); };
+            window.closeContactModal = function() { document.getElementById('contactModal').classList.add('hidden'); };
+
+            window.openDeviceModal = function() {
+                renderDeviceSessions();
+                document.getElementById('deviceModal').classList.remove('hidden');
+            };
+            window.closeDeviceModal = function() { document.getElementById('deviceModal').classList.add('hidden'); };
+
+            window.resetAllUserDevices = async function() {
+                localStorage.removeItem('ssi_active_device_sessions');
+                try {
+                    const db = getDb();
+                    if (db) await db.ref('sessions').remove();
+                } catch (e) {}
+                await recordSecurityEvent('Terminated All Device Sessions', 'SHA256-Session-Purge');
+                renderDeviceSessions();
+                closeDeviceModal();
+            };
+
+            window.openForensicModal = function() {
+                fetchLiveNetworkTelemetry();
+                document.getElementById('forensicModal').classList.remove('hidden');
+            };
+            window.closeForensicModal = function() { document.getElementById('forensicModal').classList.add('hidden'); };
+
+            window.openSuggestionModal = function() { document.getElementById('suggestionModal').classList.remove('hidden'); };
+            window.closeSuggestionModal = function() { document.getElementById('suggestionModal').classList.add('hidden'); };
+
+            window.submitSuggestion = async function() {
+                const txt = document.getElementById('suggestionText').value.trim();
+                if (!txt) {
+                    alert('Please enter a suggestion before submitting.');
+                    return;
+                }
+                const entry = { suggestion: txt, ip: currentTelemetry.ip, timestamp: Date.now() };
+                const list = JSON.parse(localStorage.getItem('ssi_feature_suggestions') || '[]');
+                list.push(entry);
+                localStorage.setItem('ssi_feature_suggestions', JSON.stringify(list));
+
+                try {
+                    const db = getDb();
+                    if (db) await db.ref('suggestions').push().set(entry);
+                } catch (e) {}
+
+                document.getElementById('suggestionText').value = '';
+                closeSuggestionModal();
+            };
+
+            function updateLockdownUI(isLocked) {
+                const badge = document.getElementById('systemSecurityBadge');
+                const badgeText = document.getElementById('systemSecurityBadgeText');
+                if (!badge || !badgeText) return;
+                if (isLocked) {
+                    badge.className = 'hidden sm:flex items-center gap-2 px-3 py-1.5 bg-rose-500/20 border border-rose-500/50 rounded-full text-rose-400 text-xs font-bold';
+                    badgeText.textContent = 'LOCKDOWN ACTIVE';
+                } else {
+                    badge.className = 'hidden sm:flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-emerald-400 text-xs font-bold';
+                    badgeText.textContent = 'LIVE SECURE';
+                }
+            }
+
+            window.toggleLockdown = async function() {
+                const currentLock = isSystemLockedDown();
+                const nextLock = !currentLock;
+                localStorage.setItem('ssi_system_lockdown', String(nextLock));
+                try {
+                    const db = getDb();
+                    if (db) await db.ref('config/systemLockdown').set(nextLock);
+                } catch (e) {}
+                updateLockdownUI(nextLock);
+                await recordSecurityEvent(nextLock ? 'System Lockdown ENABLED' : 'System Lockdown LIFTED', 'SHA256-Lockdown-Toggle');
+            };
+
+            // Initialize default classes & all modules on load
+            const classesInputEl = document.getElementById('inputClassesSpec');
+            if (classesInputEl && !classesInputEl.value.trim()) {
+                classesInputEl.value = DEFAULT_CLASSES_TEXT;
+            }
+            initializeSealImageHandler();
+            syncFields();
+            updateLockdownUI(isSystemLockedDown());
+            loadUsers();
+            renderSecurityLogs();
+            fetchLiveNetworkTelemetry();
+            runAdminIntelligentDetector();
+        })();
+    </script>
+</body>
+</html>
