@@ -1,5 +1,6 @@
 /**
- * SSI TEAM - Deep Forensic Code & Feature Diagnostic Server v25.0
+ * SSI TEAM - Live Vercel Remote & Local Deep Forensic Diagnostic Server v25.0
+ * Target Website: https://uk-trademark-certificated.vercel.app/
  * Port: 9090 | Zero External Dependencies (Pure Node.js)
  * Run Command: node diagnostic-server.js
  */
@@ -13,6 +14,7 @@ const os = require('os');
 
 const PORT = 9090;
 const WORKSPACE_DIR = __dirname;
+const DEFAULT_VERCEL_URL = 'https://uk-trademark-certificated.vercel.app/';
 
 function getLocalLanIp() {
     const interfaces = os.networkInterfaces();
@@ -26,25 +28,53 @@ function getLocalLanIp() {
     return '127.0.0.1';
 }
 
-function findTargetHtmlFile(preferredName) {
-    if (preferredName) {
-        const candidate = path.join(WORKSPACE_DIR, path.basename(preferredName));
-        if (fs.existsSync(candidate) && candidate.endsWith('.html')) {
-            return candidate;
+// Fetch live HTML or JS content directly from Vercel URL (Follows Redirects)
+function fetchRemoteTextContent(targetUrl, redirectCount = 0) {
+    return new Promise((resolve) => {
+        if (redirectCount > 5) {
+            return resolve({ ok: false, statusCode: 0, error: 'Too many redirects', body: '' });
         }
-    }
-    const defaultIndex = path.join(WORKSPACE_DIR, 'index.html');
-    if (fs.existsSync(defaultIndex)) return defaultIndex;
-
-    const files = fs.readdirSync(WORKSPACE_DIR).filter(f => f.toLowerCase().endsWith('.html'));
-    return files.length > 0 ? path.join(WORKSPACE_DIR, files[0]) : null;
+        try {
+            const client = targetUrl.startsWith('https') ? https : http;
+            const req = client.get(targetUrl, {
+                timeout: 8000,
+                headers: {
+                    'User-Agent': 'SSI-TEAM-Forensic-Diagnostic-Scanner/25.0',
+                    'Cache-Control': 'no-cache'
+                }
+            }, (res) => {
+                if ([301, 302, 307, 308].includes(res.statusCode) && res.headers.location) {
+                    const nextUrl = new URL(res.headers.location, targetUrl).toString();
+                    return resolve(fetchRemoteTextContent(nextUrl, redirectCount + 1));
+                }
+                let rawData = '';
+                res.setEncoding('utf8');
+                res.on('data', (chunk) => { rawData += chunk; });
+                res.on('end', () => {
+                    resolve({
+                        ok: res.statusCode >= 200 && res.statusCode < 400,
+                        statusCode: res.statusCode,
+                        headers: res.headers,
+                        body: rawData
+                    });
+                });
+            });
+            req.on('error', (err) => resolve({ ok: false, statusCode: 0, error: err.message, body: '' }));
+            req.on('timeout', () => {
+                req.destroy();
+                resolve({ ok: false, statusCode: 0, error: 'Connection Timeout', body: '' });
+            });
+        } catch (e) {
+            resolve({ ok: false, statusCode: 0, error: e.message, body: '' });
+        }
+    });
 }
 
 function checkRemoteUrlStatus(targetUrl) {
     return new Promise((resolve) => {
         try {
             const client = targetUrl.startsWith('https') ? https : http;
-            const req = client.request(targetUrl, { method: 'HEAD', timeout: 3500 }, (res) => {
+            const req = client.request(targetUrl, { method: 'HEAD', timeout: 4500 }, (res) => {
                 resolve({
                     ok: res.statusCode >= 200 && res.statusCode < 400,
                     statusCode: res.statusCode,
@@ -63,11 +93,41 @@ function checkRemoteUrlStatus(targetUrl) {
     });
 }
 
-async function performDeepFileAudit(filePath, browserTelemetry = null) {
+async function performDeepAudit(targetSourceUrl, browserTelemetry = null) {
     const issues = [];
     const featureChecks = [];
-    const scannedFile = path.basename(filePath);
-    const rawContent = fs.readFileSync(filePath, 'utf8');
+    const targetUrl = targetSourceUrl || DEFAULT_VERCEL_URL;
+
+    let rawContent = '';
+    let scannedSourceLabel = targetUrl;
+    let httpStatus = 200;
+
+    // 1. Fetch Live Code Directly from Vercel Website
+    const remoteRes = await fetchRemoteTextContent(targetUrl);
+    if (remoteRes.ok && remoteRes.body) {
+        rawContent = remoteRes.body;
+        httpStatus = remoteRes.statusCode;
+        featureChecks.push({
+            feature: 'Live Vercel Website Reachability',
+            status: 'PASS',
+            detail: `${targetUrl} (HTTP ${httpStatus})`
+        });
+    } else {
+        // Fallback to local index.html only if internet/Vercel is unreachable
+        const fallbackLocal = path.join(WORKSPACE_DIR, 'index.html');
+        if (fs.existsSync(fallbackLocal)) {
+            rawContent = fs.readFileSync(fallbackLocal, 'utf8');
+            scannedSourceLabel = `Local Fallback (index.html) - Vercel Error: ${remoteRes.error || remoteRes.statusCode}`;
+            featureChecks.push({
+                feature: 'Live Vercel Website Reachability',
+                status: 'WARN',
+                detail: `Vercel unreachable (${remoteRes.error || remoteRes.statusCode}), scanned local index.html`
+            });
+        } else {
+            throw new Error(`লাইভ Vercel ওয়েবসাইট (${targetUrl}) থেকে ডাটা লোড করা যায়নি: ${remoteRes.error || 'HTTP ' + remoteRes.statusCode}`);
+        }
+    }
+
     const lines = rawContent.split(/\r?\n/);
 
     const addIssue = (line, severity, feature, issue, impact, fix, codeSnippet = null) => {
@@ -125,7 +185,7 @@ async function performDeepFileAudit(filePath, browserTelemetry = null) {
     // =========================================================================
     // LAYER 2: Collect All HTML IDs & Detect Duplicate IDs with Exact Lines
     // =========================================================================
-    const htmlIdMap = new Map(); // id -> [lineNumbers]
+    const htmlIdMap = new Map();
     const idRegex = /\bid\s*=\s*["']([^"']+)["']/g;
 
     lines.forEach((lineText, idx) => {
@@ -133,7 +193,7 @@ async function performDeepFileAudit(filePath, browserTelemetry = null) {
         let match;
         while ((match = idRegex.exec(lineText)) !== null) {
             const idVal = match[1].trim();
-            if (idVal.includes('${')) continue; // Ignore dynamic template literal IDs
+            if (idVal.includes('${')) continue;
             if (!htmlIdMap.has(idVal)) {
                 htmlIdMap.set(idVal, []);
             }
@@ -155,7 +215,7 @@ async function performDeepFileAudit(filePath, browserTelemetry = null) {
     }
 
     // =========================================================================
-    // LAYER 3: Extract & Compile Every <script> Block Using Node.js vm.Script
+    // LAYER 3: Extract & Compile Every <script> Block (Including Remote Vercel Scripts)
     // =========================================================================
     const scriptBlocks = [];
     const scriptOpenRegex = /<script\b([^>]*)>/gi;
@@ -183,48 +243,54 @@ async function performDeepFileAudit(filePath, browserTelemetry = null) {
     }
 
     let combinedJsCode = '';
-    scriptBlocks.forEach((block, idx) => {
-        // Check external local scripts like firebase-config.js
+    for (let idx = 0; idx < scriptBlocks.length; idx++) {
+        const block = scriptBlocks[idx];
         const srcMatch = block.attrs.match(/\bsrc\s*=\s*["']([^"']+)["']/i);
         if (srcMatch) {
             const srcUrl = srcMatch[1];
+            // If relative script (e.g. firebase-config.js), fetch directly from live Vercel URL
             if (!/^https?:\/\//i.test(srcUrl) && !srcUrl.startsWith('//')) {
-                const localScriptPath = path.join(WORKSPACE_DIR, srcUrl);
-                if (!fs.existsSync(localScriptPath)) {
+                const remoteScriptUrl = new URL(srcUrl, targetUrl).toString();
+                const extRes = await fetchRemoteTextContent(remoteScriptUrl);
+                if (!extRes.ok) {
                     addIssue(
                         block.startLine,
                         'MEDIUM',
                         'External Script Dependency',
-                        `লোকাল স্ক্রিপ্ট ফাইল "${srcUrl}" প্রজেক্ট ফোল্ডারে পাওয়া যায়নি (লাইন ${block.startLine})`,
+                        `লাইভ সার্ভারে "${remoteScriptUrl}" ফাইলটি পাওয়া যায়নি (HTTP ${extRes.statusCode || extRes.error})`,
                         'Firebase ডাটাবেস কানেকশন কাজ করবে না এবং অ্যাপটি Offline LocalStorage মোডে চলবে।',
-                        `প্রজেক্ট ফোল্ডারে "${srcUrl}" ফাইলটি তৈরি করুন অথবা Firebase ইনিশিয়ালাইজেশন কোড যুক্ত করুন।`
+                        `Vercel ডিপ্লয়মেন্টে "${srcUrl}" ফাইলটি যুক্ত করুন।`
                     );
                 } else {
                     try {
-                        const extCode = fs.readFileSync(localScriptPath, 'utf8');
-                        new vm.Script(extCode, { filename: srcUrl });
-                        combinedJsCode += '\n' + extCode;
+                        new vm.Script(extRes.body, { filename: remoteScriptUrl });
+                        combinedJsCode += '\n' + extRes.body;
+                        featureChecks.push({
+                            feature: `Remote Script (${srcUrl})`,
+                            status: 'PASS',
+                            detail: `Loaded & Verified from ${remoteScriptUrl}`
+                        });
                     } catch (extErr) {
                         addIssue(
                             block.startLine,
                             'CRITICAL',
                             `External Script (${srcUrl})`,
-                            `"${srcUrl}" ফাইলে জাভাস্ক্রিপ্ট সিনট্যাক্স এরর: ${extErr.message}`,
+                            `"${remoteScriptUrl}" ফাইলে জাভাস্ক্রিপ্ট সিনট্যাক্স এরর: ${extErr.message}`,
                             `"${srcUrl}" লোড হওয়া মাত্রই ক্র্যাশ করবে।`,
                             `"${srcUrl}" ফাইলের সিনট্যাক্স ত্রুটি ঠিক করুন।`
                         );
                     }
                 }
             }
-            return;
+            continue;
         }
 
-        if (!block.jsCode.trim()) return;
+        if (!block.jsCode.trim()) continue;
         combinedJsCode += '\n' + block.jsCode;
 
         try {
             new vm.Script(block.jsCode, {
-                filename: `${scannedFile} (Script #${idx + 1})`,
+                filename: `${scannedSourceLabel} (Script #${idx + 1})`,
                 lineOffset: block.startLine - 1
             });
         } catch (syntaxErr) {
@@ -243,7 +309,7 @@ async function performDeepFileAudit(filePath, browserTelemetry = null) {
                 codeLine
             );
         }
-    });
+    }
 
     // =========================================================================
     // LAYER 4: Verify Every getElementById(...) Call Against Actual HTML IDs
@@ -268,7 +334,7 @@ async function performDeepFileAudit(filePath, browserTelemetry = null) {
     });
 
     // =========================================================================
-    // LAYER 5: Verify Every HTML onclick / oninput / onchange Function Exists
+    // LAYER 5: Verify Every HTML onclick / oninput / onchange / onsubmit Function
     // =========================================================================
     const definedFunctions = new Set([
         'alert', 'confirm', 'prompt', 'window', 'console', 'setTimeout', 'clearTimeout', 'decodeURIComponent', 'encodeURIComponent'
@@ -342,7 +408,7 @@ async function performDeepFileAudit(filePath, browserTelemetry = null) {
         }
     });
 
-    // Check Seal Image URL status from Node.js
+    // Check Seal Image URL status
     const sealUrlMatch = rawContent.match(/id=["']centralSealImg["'][^>]*src=["']([^"']+)["']/i);
     if (sealUrlMatch) {
         const sealUrl = sealUrlMatch[1];
@@ -423,6 +489,9 @@ async function performDeepFileAudit(filePath, browserTelemetry = null) {
 
     // Core Feature Matrix Verification
     const coreIds = [
+        { id: 'authGatewayOverlay', name: 'Firebase Security Login Gateway' },
+        { id: 'loginGatewayForm', name: 'Firebase Auth Login Form' },
+        { id: 'unbanGatewayForm', name: 'Emergency Unban Key Form' },
         { id: 'inputTmNumber', name: 'TM Number Input' },
         { id: 'inputBrandName', name: 'Brand Name Input' },
         { id: 'inputProprietor', name: 'Proprietor Input' },
@@ -439,7 +508,7 @@ async function performDeepFileAudit(filePath, browserTelemetry = null) {
         const exists = htmlIdMap.has(item.id);
         featureChecks.push({
             feature: item.name,
-            status: exists ? 'PASS' : 'FAIL',
+            status: exists ? 'PASS' : 'WARN',
             line: exists ? htmlIdMap.get(item.id)[0] : null
         });
     });
@@ -448,8 +517,8 @@ async function performDeepFileAudit(filePath, browserTelemetry = null) {
         status: 'ok',
         serverIp: getLocalLanIp(),
         port: PORT,
-        scannedFile,
-        scannedFilePath: filePath,
+        scannedFile: scannedSourceLabel,
+        scannedFilePath: targetUrl,
         totalLines: lines.length,
         totalUniqueIds: htmlIdMap.size,
         totalFunctionsVerified: definedFunctions.size,
@@ -459,11 +528,41 @@ async function performDeepFileAudit(filePath, browserTelemetry = null) {
     };
 }
 
+// Print Live Audit Report Directly in Laptop Terminal
+function printTerminalReport(report) {
+    console.log('\n------------------------------------------------------------------');
+    console.log(`📡 LIVE VERCEL SCAN TARGET : ${report.scannedFile}`);
+    console.log(`📊 TOTAL LINES SCANNED     : ${report.totalLines} lines`);
+    console.log(`🆔 UNIQUE DOM IDs          : ${report.totalUniqueIds} IDs`);
+    console.log(`⚙️  VERIFIED JS FUNCTIONS   : ${report.totalFunctionsVerified} functions`);
+    console.log(`🚨 TOTAL ISSUES FOUND      : ${report.totalIssues}`);
+    console.log('------------------------------------------------------------------');
+
+    report.featureChecks.forEach(fc => {
+        const icon = fc.status === 'PASS' ? '✅' : '⚠️';
+        const lineInfo = fc.line ? ` (Line ${fc.line})` : (fc.detail ? ` [${fc.detail}]` : '');
+        console.log(`${icon} ${fc.feature.padEnd(34)} : ${fc.status}${lineInfo}`);
+    });
+
+    if (report.issues.length > 0) {
+        console.log('\n❌ DETECTED ISSUES ON LIVE VERCEL SITE:');
+        report.issues.forEach((iss, i) => {
+            console.log(`  [${i + 1}] (${iss.severity}) Line ${iss.line} - ${iss.feature}`);
+            console.log(`      সমস্যা : ${iss.issue}`);
+            console.log(`      সমাধান: ${iss.fix}`);
+        });
+    } else {
+        console.log('\n🎉 ১০০% ক্লিন! আপনার লাইভ Vercel ওয়েবসাইটে কোনো সিনট্যাক্স বা DOM এরর নেই!');
+    }
+    console.log('==================================================================\n');
+}
+
 const server = http.createServer(async (req, res) => {
-    // Enable CORS for browser local access
+    // Full CORS & Private Network Access Headers so https://uk-trademark-certificated.vercel.app can connect to http://localhost:9090
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Private-Network', 'true');
 
     if (req.method === 'OPTIONS') {
         res.writeHead(204);
@@ -473,7 +572,6 @@ const server = http.createServer(async (req, res) => {
 
     const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
-    // Endpoint 1: Proxy Seal Image for 100% CORS-Free PDF/JPG Export while keeping Original Seal URL
     if (parsedUrl.pathname === '/proxy-seal') {
         const targetImgUrl = parsedUrl.searchParams.get('url') || 'https://exporya.b-cdn.net/wp-content/uploads/2024/02/exporya-trademark.jpg';
         const client = targetImgUrl.startsWith('https') ? https : http;
@@ -490,7 +588,6 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    // Endpoint 2: Deep Code & Feature Scan (Supports both GET /scan and POST /scan with live browser state)
     if (parsedUrl.pathname === '/scan') {
         let bodyData = '';
         req.on('data', chunk => { bodyData += chunk; });
@@ -499,20 +596,13 @@ const server = http.createServer(async (req, res) => {
             if (bodyData) {
                 try { browserTelemetry = JSON.parse(bodyData); } catch (e) {}
             }
-            const requestedFile = parsedUrl.searchParams.get('file') || (browserTelemetry && browserTelemetry.fileName);
-            const targetFile = findTargetHtmlFile(requestedFile);
-
-            if (!targetFile) {
-                res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
-                res.end(JSON.stringify({
-                    status: 'error',
-                    message: 'এই ফোল্ডারে কোনো .html ফাইল পাওয়া যায়নি।'
-                }));
-                return;
-            }
+            const requestedTargetUrl = parsedUrl.searchParams.get('url')
+                || (browserTelemetry && browserTelemetry.siteUrl)
+                || DEFAULT_VERCEL_URL;
 
             try {
-                const report = await performDeepFileAudit(targetFile, browserTelemetry);
+                const report = await performDeepAudit(requestedTargetUrl, browserTelemetry);
+                printTerminalReport(report);
                 res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
                 res.end(JSON.stringify(report, null, 2));
             } catch (err) {
@@ -525,17 +615,26 @@ const server = http.createServer(async (req, res) => {
 
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({
-        service: 'SSI TEAM Local Diagnostic Bridge v25.0',
+        service: 'SSI TEAM Live Vercel Diagnostic Bridge v25.0',
+        targetVercelUrl: DEFAULT_VERCEL_URL,
         endpoints: ['/scan (GET/POST)', '/proxy-seal?url=...']
     }));
 });
 
-server.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, '0.0.0.0', async () => {
     const lanIp = getLocalLanIp();
     console.log('==================================================================');
-    console.log('🚀 SSI TEAM - DEEP DIAGNOSTIC SERVER v25.0 RUNNING');
-    console.log(`🔗 Local URL   : http://localhost:${PORT}/scan`);
-    console.log(`🌐 Network URL : http://${lanIp}:${PORT}/scan`);
-    console.log(`🖼️ Seal Proxy  : http://localhost:${PORT}/proxy-seal`);
+    console.log('🚀 SSI TEAM - LIVE VERCEL DIAGNOSTIC SERVER v25.0 RUNNING');
+    console.log(`🌍 Target Vercel : ${DEFAULT_VERCEL_URL}`);
+    console.log(`🔗 Local Bridge  : http://localhost:${PORT}/scan`);
+    console.log(`🌐 Network URL   : http://${lanIp}:${PORT}/scan`);
     console.log('==================================================================');
+    console.log('⏳ আপনার লাইভ Vercel ওয়েবসাইট স্ক্যান করা হচ্ছে...');
+
+    try {
+        const initialReport = await performDeepAudit(DEFAULT_VERCEL_URL);
+        printTerminalReport(initialReport);
+    } catch (err) {
+        console.error('❌ প্রারম্ভিক Vercel স্ক্যানে ত্রুটি:', err.message);
+    }
 });
