@@ -257,83 +257,82 @@
     <div id="eyecareOverlay" class="no-print"></div>
 
     <!-- =========================================================
-         ADVANCED FIREBASE SECURITY LOGIN GATEWAY OVERLAY
+         EXACT SINGAPORE STYLE GATEWAY OVERLAY FOR UK GATEWAY
          ========================================================= -->
-    <div id="authGatewayOverlay" class="fixed inset-0 bg-slate-950/95 backdrop-blur-2xl z-[90000] flex items-center justify-center p-4 overflow-y-auto no-print">
-        <div class="w-full max-w-md pro-panel rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl border border-yellow-500/40 relative my-auto">
-            <!-- Top Brand & Firebase Live Status -->
-            <div class="flex items-center justify-between border-b border-yellow-500/20 pb-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 rounded-2xl gold-badge flex items-center justify-center text-yellow-400 font-black text-lg shadow-lg">
-                        🇬🇧
-                    </div>
-                    <div>
-                        <h2 class="text-sm sm:text-base font-black tracking-tight text-yellow-400 uppercase">SSI TEAM AUTH GATEWAY</h2>
-                        <p class="text-[10px] text-slate-400 font-mono">UK IPO Automation Vault • Firebase v25.0</p>
-                    </div>
-                </div>
-                <div id="loginFirebaseBadge" class="px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-[10px] font-bold flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                    <span id="loginFirebaseStatusText">FIREBASE LIVE</span>
+    <div id="authGatewayOverlay" class="fixed inset-0 bg-[#070b14] z-[90000] flex items-center justify-center p-4 overflow-y-auto no-print">
+        <div class="w-full max-w-[420px] bg-[#0c1220] rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-800 relative my-auto text-center">
+            
+            <!-- Language Selector Dropdown Header -->
+            <div class="flex justify-end mb-2">
+                <div class="inline-flex items-center gap-2 bg-[#121b2d] border border-slate-700/60 text-slate-200 text-xs px-3 py-1.5 rounded-xl font-medium cursor-pointer">
+                    <i data-lucide="globe" class="w-3.5 h-3.5 text-slate-400"></i>
+                    <span>English</span>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
                 </div>
             </div>
 
-            <!-- Role / Mode Selector Tabs -->
-            <div class="grid grid-cols-3 gap-1.5 p-1 bg-slate-900/90 rounded-xl border border-slate-800 text-[11px] font-bold">
-                <button type="button" id="loginTabOperator" onclick="switchLoginGatewayMode('operator')" class="py-2 px-2 rounded-lg bg-yellow-500 text-slate-950 font-black transition-all">
-                    Operator Login
-                </button>
-                <button type="button" id="loginTabAdmin" onclick="switchLoginGatewayMode('admin')" class="py-2 px-2 rounded-lg text-slate-300 hover:text-yellow-400 transition-all">
-                    Master Admin
-                </button>
-                <button type="button" id="loginTabUnban" onclick="switchLoginGatewayMode('unban')" class="py-2 px-2 rounded-lg text-rose-400 hover:text-rose-300 transition-all">
-                    Unban Key
-                </button>
+            <!-- Top Shield Badge Container -->
+            <div class="flex justify-center">
+                <div class="w-16 h-16 rounded-2xl bg-[#172033] border border-yellow-500/40 flex items-center justify-center shadow-inner">
+                    <i data-lucide="shield-check" class="w-8 h-8 text-yellow-400"></i>
+                </div>
             </div>
 
-            <!-- Alert / Error / Status Banner -->
-            <div id="loginGatewayAlertBox" class="hidden p-3 rounded-xl border text-xs font-medium"></div>
+            <!-- Header Branding -->
+            <div class="space-y-1">
+                <h1 class="text-2xl font-black tracking-tight text-yellow-400 uppercase">SSI TEAM GATEWAY</h1>
+                <p class="text-xs text-slate-400 font-medium">UK Trade Marks Enterprise Portal v25.0</p>
+            </div>
 
-            <!-- Standard Login Form (Operator & Master Admin) -->
-            <form id="loginGatewayForm" onsubmit="handleFirebaseGatewayLogin(event)" class="space-y-4">
+            <!-- Alert / Error Banner -->
+            <div id="loginGatewayAlertBox" class="hidden p-3 rounded-xl border text-xs font-medium text-left"></div>
+
+            <!-- Authentication Form (Matches Singapore Reference Layout) -->
+            <form id="loginGatewayForm" onsubmit="handleFirebaseGatewayLogin(event)" class="space-y-4 text-left">
                 <div>
-                    <label id="loginEmailLabel" class="block text-[11px] font-bold text-yellow-400 uppercase mb-1.5">
-                        Registered Operator Email (Firebase IAM)
+                    <label class="block text-[11px] font-bold text-yellow-400 uppercase mb-2 tracking-wider">
+                        AUTHORIZED EMAIL
                     </label>
-                    <input type="email" id="loginEmailInput" required autocomplete="username" placeholder="operator@ukipo.gov.uk" class="w-full input-dark rounded-xl px-4 py-3 text-xs outline-none font-semibold">
-                </div>
-
-                <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label class="block text-[11px] font-bold text-yellow-400 uppercase">
-                            Security Password (SHA-256)
-                        </label>
-                        <button type="button" onclick="toggleLoginPasswordVisibility()" class="text-[10px] text-sky-400 hover:text-sky-300 font-bold">
-                            <span id="loginPassToggleText">Show Password</span>
-                        </button>
+                    <div class="relative">
+                        <input type="email" id="loginEmailInput" required autocomplete="username" placeholder="Type your authorized email" class="w-full bg-[#121b2d] border border-slate-700/80 rounded-xl px-4 py-3.5 text-xs text-slate-100 outline-none focus:border-yellow-500 font-medium pr-10">
+                        <i data-lucide="mail" class="w-4 h-4 text-slate-400 absolute right-3.5 top-4"></i>
                     </div>
-                    <input type="password" id="loginPasswordInput" required autocomplete="current-password" placeholder="••••••••••••" class="w-full input-dark rounded-xl px-4 py-3 text-xs outline-none font-semibold">
                 </div>
 
-                <div class="flex items-center justify-between text-[11px] text-slate-300 pt-1">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" id="loginRememberCheck" checked class="accent-yellow-400 rounded">
-                        <span>Keep hardware session active</span>
+                <div>
+                    <label class="block text-[11px] font-bold text-yellow-400 uppercase mb-2 tracking-wider">
+                        SECURE PASSWORD
                     </label>
-                    <button type="button" onclick="openContactModal()" class="text-yellow-400 hover:underline font-bold">
-                        Request Access?
+                    <div class="relative">
+                        <input type="password" id="loginPasswordInput" required autocomplete="current-password" placeholder="••••••••" class="w-full bg-[#121b2d] border border-slate-700/80 rounded-xl px-4 py-3.5 text-xs text-slate-100 outline-none focus:border-yellow-500 font-medium pr-10">
+                        <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute right-3.5 top-4 cursor-pointer" onclick="toggleLoginPasswordVisibility()"></i>
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" id="loginSubmitBtn" class="w-full py-4 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">
+                        <span id="loginSubmitBtnText">AUTHENTICATE PRO TERMINAL</span>
                     </button>
                 </div>
 
-                <button type="submit" id="loginSubmitBtn" class="w-full py-3.5 btn-gold text-xs uppercase tracking-widest shadow-lg flex items-center justify-center gap-2">
-                    <span id="loginSubmitBtnText">AUTHENTICATE WITH FIREBASE VAULT</span>
-                </button>
+                <!-- Auxiliary Information Buttons -->
+                <div class="space-y-2.5 pt-2">
+                    <button type="button" onclick="openSubRatesModal()" class="w-full py-3 bg-[#121b2d] hover:bg-[#18243b] border border-slate-700/70 text-yellow-400 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="credit-card" class="w-4 h-4"></i>
+                        <span>একাউন্ট চাচ্ছেন? সাবস্ক্রিপশন রেট জেনে নিন</span>
+                    </button>
+
+                    <button type="button" onclick="openContactModal()" class="w-full py-3 bg-[#121b2d] hover:bg-[#18243b] border border-slate-700/70 text-emerald-400 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="message-circle" class="w-4 h-4"></i>
+                        <span>Contact Admin (WhatsApp / Telegram / FB)</span>
+                    </button>
+                </div>
             </form>
 
-            <!-- Self-Service Emergency Unban Key Form -->
-            <form id="unbanGatewayForm" onsubmit="handleFirebaseUnbanUnlock(event)" class="hidden space-y-4">
+            <!-- Hidden Recovery Form for Unban Execution -->
+            <form id="unbanGatewayForm" onsubmit="handleFirebaseUnbanUnlock(event)" class="hidden space-y-4 text-left">
                 <div class="p-3 bg-rose-950/40 border border-rose-500/30 rounded-xl text-[11px] text-rose-200 leading-relaxed">
-                    If your subscriber license was suspended or locked, enter your registered email and the <b>UNBAN-XXXXXX</b> recovery key provided by SSI TEAM Admin.
+                    If your subscriber license was suspended, enter your email and the <b>UNBAN-XXXXXX</b> recovery key.
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-yellow-400 uppercase mb-1.5">Suspended Subscriber Email</label>
@@ -344,24 +343,16 @@
                     <input type="text" id="unbanKeyInput" placeholder="UNBAN-123456" class="w-full input-dark rounded-xl px-4 py-3 text-xs outline-none font-mono font-bold text-emerald-400 uppercase">
                 </div>
                 <button type="submit" id="unbanSubmitBtn" class="w-full py-3.5 btn-action-emerald text-xs uppercase tracking-widest shadow-lg">
-                    VERIFY KEY & RESTORE FIREBASE ACCESS
+                    VERIFY KEY & RESTORE ACCESS
                 </button>
             </form>
 
-            <!-- Live Hardware Fingerprint & IP Telemetry Footer -->
-            <div class="pt-3 border-t border-slate-800/90 space-y-1.5 text-[10px] font-mono text-slate-400">
-                <div class="flex items-center justify-between">
-                    <span>Operator IP Trace:</span>
-                    <span id="loginTelemetryIp" class="text-emerald-400 font-bold">Detecting...</span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <span>Hardware SHA-256 ID:</span>
-                    <span id="loginTelemetryFp" class="text-sky-400 font-bold">Computing...</span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <span>Firebase Project ID:</span>
-                    <span class="text-yellow-400 font-bold">uk-trademark-certificated</span>
-                </div>
+            <!-- Status Badges & Hardware Telemetry Footprint -->
+            <div class="pt-2 text-[10px] font-mono text-slate-500 flex justify-between items-center border-t border-slate-800/80">
+                <span id="loginTelemetryIp">Detecting...</span>
+                <span id="loginTelemetryFp" class="text-slate-400 font-bold">Computing...</span>
+                <span id="loginFirebaseBadge" class="hidden"></span>
+                <span id="loginFirebaseStatusText" class="hidden"></span>
             </div>
         </div>
     </div>
@@ -1174,52 +1165,22 @@
             window.switchLoginGatewayMode = function(mode) {
                 currentAuthMode = mode;
                 hideLoginAlert();
-                const tabOp = document.getElementById('loginTabOperator');
-                const tabAd = document.getElementById('loginTabAdmin');
-                const tabUn = document.getElementById('loginTabUnban');
                 const loginForm = document.getElementById('loginGatewayForm');
                 const unbanForm = document.getElementById('unbanGatewayForm');
-                const emailLabel = document.getElementById('loginEmailLabel');
-                const emailInput = document.getElementById('loginEmailInput');
-                const submitText = document.getElementById('loginSubmitBtnText');
-
-                const resetTabClass = 'py-2 px-2 rounded-lg text-slate-300 hover:text-yellow-400 transition-all';
-                if (tabOp) tabOp.className = resetTabClass;
-                if (tabAd) tabAd.className = resetTabClass;
-                if (tabUn) tabUn.className = 'py-2 px-2 rounded-lg text-rose-400 hover:text-rose-300 transition-all';
 
                 if (mode === 'unban') {
-                    if (tabUn) tabUn.className = 'py-2 px-2 rounded-lg bg-rose-600 text-white font-black transition-all';
                     if (loginForm) loginForm.classList.add('hidden');
                     if (unbanForm) unbanForm.classList.remove('hidden');
                 } else {
                     if (loginForm) loginForm.classList.remove('hidden');
                     if (unbanForm) unbanForm.classList.add('hidden');
-                    if (mode === 'admin') {
-                        if (tabAd) tabAd.className = 'py-2 px-2 rounded-lg bg-yellow-500 text-slate-950 font-black transition-all';
-                        if (emailLabel) emailLabel.textContent = 'Master Admin Vault Email (Firebase Auth)';
-                        if (emailInput) emailInput.placeholder = 'admin@ukipo.gov.uk';
-                        if (submitText) submitText.textContent = 'UNLOCK MASTER ADMIN VAULT';
-                    } else {
-                        if (tabOp) tabOp.className = 'py-2 px-2 rounded-lg bg-yellow-500 text-slate-950 font-black transition-all';
-                        if (emailLabel) emailLabel.textContent = 'Registered Operator Email (Firebase IAM)';
-                        if (emailInput) emailInput.placeholder = 'operator@ukipo.gov.uk';
-                        if (submitText) submitText.textContent = 'AUTHENTICATE WITH FIREBASE VAULT';
-                    }
                 }
             };
 
             window.toggleLoginPasswordVisibility = function() {
                 const passInput = document.getElementById('loginPasswordInput');
-                const toggleText = document.getElementById('loginPassToggleText');
-                if (!passInput || !toggleText) return;
-                if (passInput.type === 'password') {
-                    passInput.type = 'text';
-                    toggleText.textContent = 'Hide Password';
-                } else {
-                    passInput.type = 'password';
-                    toggleText.textContent = 'Show Password';
-                }
+                if (!passInput) return;
+                passInput.type = passInput.type === 'password' ? 'text' : 'password';
             };
 
             function applyAuthenticatedSessionUI(sessionData) {
@@ -1277,13 +1238,11 @@
 
                 const emailEl = document.getElementById('loginEmailInput');
                 const passEl = document.getElementById('loginPasswordInput');
-                const rememberEl = document.getElementById('loginRememberCheck');
                 const submitBtn = document.getElementById('loginSubmitBtn');
                 const submitText = document.getElementById('loginSubmitBtnText');
 
                 const email = emailEl ? emailEl.value.trim().toLowerCase() : '';
                 const password = passEl ? passEl.value : '';
-                const remember = rememberEl ? rememberEl.checked : true;
 
                 if (!email || !password) {
                     showLoginAlert('Please enter both your email address and security password.', 'error');
@@ -1291,7 +1250,7 @@
                 }
 
                 if (submitBtn) submitBtn.disabled = true;
-                if (submitText) submitText.textContent = 'VERIFYING WITH FIREBASE VAULT...';
+                if (submitText) submitText.textContent = 'AUTHENTICATING...';
 
                 try {
                     const ipAllowed = await verifyIpNotBlockedInFirebase();
@@ -1318,50 +1277,32 @@
                         } catch (e) {}
                     }
 
-                    // 1. MASTER ADMIN AUTHENTICATION FLOW
-                    if (currentAuthMode === 'admin') {
-                        let adminVerified = false;
-                        const defaultAdminEmail = 'admin@ukipo.gov.uk';
-                        const defaultAdminHash = await sha256Hash('Admin@2026');
+                    // 1. MASTER ADMIN AUTHENTICATION CHECK
+                    let adminVerified = false;
+                    const defaultAdminEmail = 'admin@ukipo.gov.uk';
+                    const defaultAdminHash = await sha256Hash('Admin@2026');
 
-                        if (db) {
-                            try {
-                                const adminSnap = await db.ref('config/adminAuth').once('value');
-                                const adminVal = adminSnap.val();
-                                if (adminVal && adminVal.email && adminVal.passwordHash) {
-                                    if (adminVal.email.toLowerCase() === email && adminVal.passwordHash === passHash) {
-                                        adminVerified = true;
-                                    }
-                                } else if (email === defaultAdminEmail && passHash === defaultAdminHash) {
-                                    adminVerified = true;
-                                    await db.ref('config/adminAuth').set({
-                                        email: defaultAdminEmail,
-                                        passwordHash: defaultAdminHash,
-                                        updatedAt: Date.now()
-                                    });
-                                }
-                            } catch (e) {
-                                if (email === defaultAdminEmail && passHash === defaultAdminHash) {
+                    if (db) {
+                        try {
+                            const adminSnap = await db.ref('config/adminAuth').once('value');
+                            const adminVal = adminSnap.val();
+                            if (adminVal && adminVal.email && adminVal.passwordHash) {
+                                if (adminVal.email.toLowerCase() === email && adminVal.passwordHash === passHash) {
                                     adminVerified = true;
                                 }
+                            } else if (email === defaultAdminEmail && passHash === defaultAdminHash) {
+                                adminVerified = true;
                             }
-                        } else if (email === defaultAdminEmail && passHash === defaultAdminHash) {
-                            adminVerified = true;
+                        } catch (e) {
+                            if (email === defaultAdminEmail && passHash === defaultAdminHash) {
+                                adminVerified = true;
+                            }
                         }
+                    } else if (email === defaultAdminEmail && passHash === defaultAdminHash) {
+                        adminVerified = true;
+                    }
 
-                        if (!adminVerified && auth) {
-                            try {
-                                const cred = await auth.signInWithEmailAndPassword(email, password);
-                                if (cred && cred.user) adminVerified = true;
-                            } catch (e) {}
-                        }
-
-                        if (!adminVerified) {
-                            await recordSecurityEvent(`Failed Admin Login: ${email}`, passHash.substring(0, 14));
-                            showLoginAlert('Invalid Master Admin credentials. Please verify your email and password.', 'error');
-                            return;
-                        }
-
+                    if (adminVerified) {
                         const adminSession = {
                             email,
                             role: 'MASTER_ADMIN',
@@ -1371,7 +1312,7 @@
                             loginTime: Date.now()
                         };
                         const serialized = JSON.stringify(adminSession);
-                        if (remember) localStorage.setItem('ssi_active_session_token', serialized);
+                        localStorage.setItem('ssi_active_session_token', serialized);
                         sessionStorage.setItem('ssi_active_session_token', serialized);
 
                         await recordSecurityEvent(`Master Admin Login: ${email}`, passHash.substring(0, 14));
@@ -1379,10 +1320,10 @@
                         return;
                     }
 
-                    // 2. OPERATOR / SUBSCRIBER AUTHENTICATION FLOW (FIREBASE REALTIME DB + AUTH)
+                    // 2. OPERATOR / SUBSCRIBER AUTHENTICATION FLOW
                     if (lockdownActive) {
                         await recordSecurityEvent(`Lockdown Blocked Login: ${email}`, passHash.substring(0, 14));
-                        showLoginAlert('SYSTEM LOCKDOWN ACTIVE: Operator logins are temporarily restricted by Master Administrator.', 'warn');
+                        showLoginAlert('SYSTEM LOCKDOWN ACTIVE: Operator logins are temporarily restricted.', 'warn');
                         return;
                     }
 
@@ -1414,7 +1355,6 @@
                         }
                     }
 
-                    // Also check Firebase Authentication if user exists in Firebase Auth
                     let firebaseAuthSuccess = false;
                     if (auth) {
                         try {
@@ -1426,8 +1366,8 @@
                     }
 
                     if (!matchedUser && !firebaseAuthSuccess) {
-                        await recordSecurityEvent(`Failed Operator Login (Not Enrolled): ${email}`, passHash.substring(0, 14));
-                        showLoginAlert('No active subscriber found with this email in Firebase Vault. Contact Admin or log in via Master Admin tab.', 'error');
+                        await recordSecurityEvent(`Failed Operator Login: ${email}`, passHash.substring(0, 14));
+                        showLoginAlert('No active subscriber found with this email in Firebase Vault.', 'error');
                         return;
                     }
 
@@ -1443,11 +1383,10 @@
                             switchLoginGatewayMode('unban');
                             const unbanEmail = document.getElementById('unbanEmailInput');
                             if (unbanEmail) unbanEmail.value = email;
-                            showLoginAlert('This subscriber account is currently BANNED. Enter your UNBAN-XXXXXX key below to unlock.', 'error');
+                            showLoginAlert('This subscriber account is BANNED. Enter your UNBAN key below.', 'error');
                             return;
                         }
 
-                        // Enforce Max Devices via Hardware Fingerprint in Firebase
                         const maxAllowed = Number(matchedUser.maxDevice) || 1;
                         const fp = currentTelemetry.fingerprint || 'fp_default';
                         const activeDevices = matchedUser.activeDevices && typeof matchedUser.activeDevices === 'object' ? matchedUser.activeDevices : {};
@@ -1455,7 +1394,7 @@
 
                         if (!activeDevices[fp] && knownFps.length >= maxAllowed) {
                             await recordSecurityEvent(`Device Limit Exceeded: ${email}`, fp);
-                            showLoginAlert(`Device Limit Reached (${knownFps.length}/${maxAllowed} active devices). Ask Admin to reset your device sessions.`, 'warn');
+                            showLoginAlert(`Device Limit Reached (${knownFps.length}/${maxAllowed} active devices).`, 'warn');
                             return;
                         }
 
@@ -1489,18 +1428,14 @@
                     };
 
                     const serializedSession = JSON.stringify(sessionPayload);
-                    if (remember) localStorage.setItem('ssi_active_session_token', serializedSession);
+                    localStorage.setItem('ssi_active_session_token', serializedSession);
                     sessionStorage.setItem('ssi_active_session_token', serializedSession);
 
                     await recordSecurityEvent(`Verified Operator Login: ${email}`, passHash.substring(0, 14));
                     applyAuthenticatedSessionUI(sessionPayload);
                 } finally {
                     if (submitBtn) submitBtn.disabled = false;
-                    if (submitText) {
-                        submitText.textContent = currentAuthMode === 'admin'
-                            ? 'UNLOCK MASTER ADMIN VAULT'
-                            : 'AUTHENTICATE WITH FIREBASE VAULT';
-                    }
+                    if (submitText) submitText.textContent = 'AUTHENTICATE PRO TERMINAL';
                 }
             };
 
@@ -1803,7 +1738,7 @@
             };
 
             // =========================================================
-            // 100% ACCURATE MULTI-LAYER DIAGNOSTIC ENGINE (VERCEL + LOCAL SERVER 9090)
+            // MULTI-LAYER DIAGNOSTIC ENGINE (VERCEL + LOCAL SERVER 9090)
             // =========================================================
             function calculateLocalStorageUsageKB() {
                 let totalChars = 0;
@@ -1920,12 +1855,10 @@
                 const bridgeUrl = (bridgeInput && bridgeInput.value.trim()) ? bridgeInput.value.trim().replace(/\/$/, '') : 'http://localhost:9090';
                 resultsContainer.innerHTML = `<p class="text-yellow-400">⏳ লোকাল ডায়াগনস্টিক সার্ভার (${sanitizeInput(bridgeUrl)}/scan), লাইভ Vercel ওয়েবসাইট (${LIVE_VERCEL_URL}), DOM বাইন্ডিং ও সার্টিফিকেট সিল পরীক্ষা করা হচ্ছে...</p>`;
 
-                // 1. Audit Storage
                 const storageKB = calculateLocalStorageUsageKB();
                 const metricStorage = document.getElementById('diagMetricStorage');
                 if (metricStorage) metricStorage.textContent = `${storageKB} KB (${localStorage.length} keys)`;
 
-                // 2. Audit Certificate Live Bindings
                 const bindingAudit = auditCertificateBindings();
                 const metricBinding = document.getElementById('diagMetricBinding');
                 if (metricBinding) {
@@ -1933,7 +1866,6 @@
                     metricBinding.className = bindingAudit.syncedCount === bindingAudit.total ? 'font-bold text-emerald-400' : 'font-bold text-rose-400';
                 }
 
-                // 3. Audit Seal Image Asset
                 const sealImg = document.getElementById('centralSealImg');
                 const sealLoaded = !!(sealImg && sealImg.complete && sealImg.naturalWidth > 0);
                 const sealDims = sealLoaded ? `${sealImg.naturalWidth}×${sealImg.naturalHeight}px` : 'Not Loaded';
@@ -1943,7 +1875,6 @@
                     metricSeal.className = sealLoaded ? 'font-bold text-emerald-400' : 'font-bold text-amber-400';
                 }
 
-                // 4. Audit Export & Crypto Libraries
                 const libsAudit = auditRequiredLibraries();
                 const libsOkCount = libsAudit.filter(l => l.ok).length;
                 const metricLibs = document.getElementById('diagMetricLibs');
@@ -1952,7 +1883,6 @@
                     metricLibs.className = libsOkCount === libsAudit.length ? 'font-bold text-emerald-400' : 'font-bold text-amber-400';
                 }
 
-                // 5. Deep Browser DOM & Event Handler Audit
                 const localIssues = [];
                 const allElsWithId = document.querySelectorAll('[id]');
                 const idCounts = {};
@@ -2028,7 +1958,6 @@
                     metricDom.className = handlerAudit.brokenHandlers.length === 0 ? 'font-bold text-emerald-400' : 'font-bold text-rose-400';
                 }
 
-                // 6. Send Live Vercel Telemetry to Laptop Terminal Bridge (POST /scan)
                 let bridgeConnected = false;
                 let bridgeData = null;
                 let bridgePingMs = 0;
